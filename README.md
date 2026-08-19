@@ -53,6 +53,6 @@ Required repo secrets:
 Manual:
 
 ```bash
-pnpm deploy                 # build + wrangler deploy
+pnpm ship                   # build + wrangler deploy
 pnpm d1:migrate:remote      # first time / new SQL
 ```

@@ -11,7 +11,7 @@
     "qa:next": "tsx scripts/qa-next.ts",
     "d1:migrate": "wrangler d1 migrations apply letsplaycards --local",
     "d1:migrate:remote": "wrangler d1 migrations apply letsplaycards --remote",
-    "deploy": "pnpm build && wrangler deploy"
+    "ship": "pnpm build && wrangler deploy"
   },
   "dependencies": {
     "react": "^19.2.4",
