@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "letsplaycards",
+  "account_id": "c96f5c11e25505555d06dc79e77c6574",
+  "compatibility_date": "2026-04-16",
+  "main": "./src/index.ts",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "SESSION_SECRET": "dev-only-lpc-session-secret-change-me"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "letsplaycards",
+      "database_id": "0489b456-5c15-4d2f-8932-bb3de9637777",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_ROOM",
+        "class_name": "GameRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GameRoom"]
+    }
+  ]
+}

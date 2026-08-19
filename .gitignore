@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Cloudflare / wrangler
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Local data (D1/R2 local state)
+.data/
+
+# Env
+.env
+.env.*
+!.env.local.example
+!**/.env.local.example
+
+# Build output
+dist/
+public/client.js
+public/styles.css
+public/games/
+public/sitemap.xml
+public/robots.txt
+
+# Local / studio
+.scratch/
+.hermes/
+.glassbox-studio/
+data-destinations/
+
+# Misc
+.DS_Store
+*.log
