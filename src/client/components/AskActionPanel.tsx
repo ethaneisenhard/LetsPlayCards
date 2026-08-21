@@ -48,7 +48,7 @@ export function AskActionPanel({
       {hint && !phone && <p className="text-white/55 text-xs text-center leading-snug">{hint}</p>}
       {ranks && ranks.length > 0 && onSelectRank && (
         <div className="flex flex-col items-center gap-1.5 w-full">
-          <span className="text-white/40 text-[10px] uppercase tracking-widest">Rank</span>
+          <span className="text-white/40 text-[10px] uppercase tracking-widest">Number or face</span>
           <div className="flex flex-wrap justify-center gap-1.5">
             {ranks.map((rank) => (
               <button

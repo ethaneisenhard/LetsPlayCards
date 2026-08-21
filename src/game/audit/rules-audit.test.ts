@@ -27,10 +27,10 @@ describe('rules audit', () => {
     const card = rulesCardFor(GAME_CONFIGS.go_fish, GLOSSARY.go_fish);
     const sheet = `${card.win} ${card.steps.join(' ')}`;
     expect(sheet).toMatch(/pick/i);
-    expect(sheet).toMatch(/anyone|seat/i);
-    expect(sheet).toMatch(/hold/i);
-    expect(sheet).toMatch(/book/i);
-    expect(sheet).toMatch(/four|4/i);
-    expect(sheet).toMatch(/empty/i);
+    expect(sheet).toMatch(/anyone|player/i);
+    expect(sheet).toMatch(/already have|hold/i);
+    expect(sheet).not.toMatch(/\bbooks?\b/i);
+    expect(sheet).toMatch(/four of a kind|set of four|four cards/i);
+    expect(sheet).toMatch(/gone|empty|no one is holding/i);
   });
 });

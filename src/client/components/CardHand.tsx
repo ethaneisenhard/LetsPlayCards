@@ -38,10 +38,10 @@ function OrderBar({
   return (
     <div className={`flex items-center justify-center gap-2 ${compact ? 'px-3 pb-2' : ''}`}>
       <button type="button" className={btn} onClick={onRank}>
-        Rank
+        Number
       </button>
       <button type="button" className={btn} onClick={onSuit}>
-        Suit
+        Shape
       </button>
       <button type="button" className={btn} disabled={!canNudge} onClick={() => onNudge(-1)}>
         ←
@@ -161,7 +161,7 @@ export function CardHand({
       <div className="flex flex-col">
         <div className="flex items-center justify-between px-3 pt-2 pb-1">
           <span className="text-white/30 text-[10px] uppercase tracking-widest">
-            Your Hand · {ordered.length}
+            Your cards · {ordered.length}
           </span>
           {selectedCard && (
             <button onClick={() => setSelectedCard(null)} className="text-white/30 text-[10px]">
@@ -188,14 +188,14 @@ export function CardHand({
                 onClick={handleDiscard}
                 className="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white/80 font-bold text-base transition-all active:scale-95"
               >
-                Discard
+                Put aside
               </button>
             )}
           </div>
         )}
         {!quiet && !selectedCard && !pickedCardId && ordered.length > 0 && (
           <p className="text-white/20 text-[10px] text-center pb-3">
-            {pickHint ?? 'Tap a card · Rank / Suit / ← → to arrange'}
+            {pickHint ?? 'Tap a card · Number / Shape / ← → to arrange'}
           </p>
         )}
         {!quiet && onPick && pickedCardId && pickHint && (
@@ -208,7 +208,7 @@ export function CardHand({
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="text-gold/60 text-xs tracking-widest uppercase font-medium">
-        Your Hand · {ordered.length} card{ordered.length !== 1 ? 's' : ''}
+        Your cards · {ordered.length} card{ordered.length !== 1 ? 's' : ''}
       </div>
 
       {fan}
@@ -229,7 +229,7 @@ export function CardHand({
               onClick={handleDiscard}
               className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white/80 font-semibold text-sm transition-all hover:scale-105 active:scale-95"
             >
-              Discard
+              Put aside
             </button>
           )}
           <button
@@ -241,7 +241,7 @@ export function CardHand({
         </div>
       )}
       {!selectedCard && !pickedCardId && ordered.length > 0 && (
-        <p className="text-white/30 text-xs">{pickHint ?? 'Click a card · Rank / Suit / ← → to arrange'}</p>
+        <p className="text-white/30 text-xs">{pickHint ?? 'Click a card · Number / Shape / ← → to arrange'}</p>
       )}
       {onPick && pickedCardId && pickHint && (
         <p className="text-gold/60 text-xs">{pickHint}</p>

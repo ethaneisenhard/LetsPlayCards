@@ -57,7 +57,7 @@ describe('ask copy', () => {
     expect(askButtonLabel(null, 'Alice', true)).toBe('Ask');
     expect(askButtonLabel('7', 'Alice', true)).toBe('Ask anyone for 7s');
     expect(askButtonLabel('7', 'Alice', false)).toBe('Ask Alice for 7s');
-    expect(askTurnHint(null)).toBe('● Your turn · ask for a rank you hold');
+    expect(askTurnHint(null)).toBe('● Your turn · ask for a number or face you already have');
     expect(askTurnHint('Q')).toBe('● Your turn · ask for Qs');
   });
 
@@ -81,7 +81,7 @@ describe('draw-from copy', () => {
   it('explains disabled seats instead of going silent', () => {
     expect(
       seatActionLabel({ askRank: true, drawFrom: false, rank: null, name: 'Alice', handCount: 4 }),
-    ).toBe('Ask Alice — pick a rank first');
+    ).toBe('Ask Alice — pick a number or face first');
     expect(
       seatActionLabel({ askRank: true, drawFrom: false, rank: '7', name: 'Alice', handCount: 4 }),
     ).toBe('Ask Alice for 7s');

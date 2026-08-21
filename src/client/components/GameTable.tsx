@@ -38,7 +38,7 @@ import {
   resolveAskTargetId,
   seatActionLabel,
 } from '../lib/ask-action-pure';
-import { bookCounts, bookScoreLine, lastAskLine } from '../lib/last-ask-pure';
+import { bookCounts, bookScoreLine, lastAskLine, setCountLabel, setScoreHeading } from '../lib/last-ask-pure';
 import { mobileTurnLine, resolveMobileDock } from '../lib/mobile-dock-pure';
 import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { suitLaddersFromPlayed } from '../lib/suit-ladder-pure';
@@ -253,7 +253,7 @@ export function GameTable({
   const ladders = chrome.showLadders ? suitLaddersFromPlayed(gs.played) : [];
   const hole = chrome.holeFromState ? gs.cards?.[player.id] : undefined;
   const seatScore = (id: string): string | undefined => {
-    if (gs.books) return `${books[id] ?? 0} books`;
+    if (gs.books) return setCountLabel(books[id] ?? 0);
     if (gs.tokens) return `${gs.tokens[id] ?? 0} tokens`;
     if (gs.lives) return `${gs.lives[id] ?? 0} lives`;
     if (gs.chips) return `${gs.chips[id] ?? 0} chips`;
@@ -472,8 +472,8 @@ export function GameTable({
           phone
             ? undefined
             : chrome.askRankIntent
-              ? 'Choose a rank you hold, then who — a seat or anyone at the table.'
-              : 'Choose a player and draw a card from their hand.'
+              ? 'Choose a number or face you already have, then who — Anyone or a named player.'
+              : 'Choose a player and take a card they are holding.'
         }
         ranks={chrome.askRankIntent ? heldRanks : undefined}
         selectedRank={pickedRank}
@@ -585,7 +585,7 @@ export function GameTable({
                         : chrome.askRankIntent
                           ? askTurnHint(pickedRank)
                           : chrome.turnButtons.length > 0
-                            ? '● Your turn · Hit or Stand'
+                            ? `● Your turn · ${chrome.turnButtons.map((b) => b.label).join(' or ')}`
                             : '● Your turn'
                       : `Waiting for ${currentTurnPlayer?.name ?? '…'}…`}
                   </span>
@@ -594,7 +594,7 @@ export function GameTable({
         </span>
         {isMyTurn && hasDrawLimit && (
           <span className="text-white/30">
-            · {drawsLeft > 0 ? `${drawsLeft} draw${drawsLeft !== 1 ? 's' : ''} left` : 'no draws left'} · discard to end turn
+            · {drawsLeft > 0 ? `${drawsLeft} draw${drawsLeft !== 1 ? 's' : ''} left` : 'no draws left'} · put one aside to end the turn
           </span>
         )}
       </div>
@@ -722,7 +722,7 @@ export function GameTable({
                 </div>
               ))}
               {askLine && <p className="text-white/50 text-[10px] text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/50 text-[10px] text-center">Books · {scoreLine}</p>}
+              {scoreLine && <p className="text-gold/50 text-[10px] text-center">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -757,7 +757,7 @@ export function GameTable({
                   </span>
                 </div>
               ) : (
-                <span className="text-white/15 text-[9px] text-center">Discard</span>
+                <span className="text-white/15 text-[9px] text-center">Leftover</span>
               )}
             </div>
             <span className="text-white/20 text-[9px] h-3">{game.discardPile.length}</span>
@@ -911,7 +911,7 @@ export function GameTable({
               )}
               {chrome.widowSwap && (gs.widow ?? []).length > 0 && (
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-white/40 text-xs uppercase tracking-widest">Widow · pick a hand card first</span>
+                  <span className="text-white/40 text-xs uppercase tracking-widest">Shared cards · pick one of yours first</span>
                   <div className="flex gap-2">
                     {(gs.widow ?? []).map((card, i) => (
                       <PlayingCard
@@ -935,7 +935,7 @@ export function GameTable({
                       }}
                       className="text-white/50 text-xs hover:text-gold"
                     >
-                      Swap with stock
+                      Swap with the leftover pile
                     </button>
                   )}
                 </div>
@@ -952,7 +952,7 @@ export function GameTable({
               ))}
               {turnButtonRow()}
               {askLine && <p className="text-white/60 text-sm text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/60 text-xs text-center">Books · {scoreLine}</p>}
+              {scoreLine && <p className="text-gold/60 text-xs text-center">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -980,9 +980,9 @@ export function GameTable({
             <div className="w-[70px] h-[100px] rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center">
               {game.discardPile.length > 0
                 ? <PlayingCard card={game.discardPile[game.discardPile.length - 1]} />
-                : <span className="text-white/20 text-xs text-center leading-tight">Discard<br />Pile</span>}
+                : <span className="text-white/20 text-xs text-center leading-tight">Leftover<br />pile</span>}
             </div>
-            <span className="text-white/30 text-xs h-4">{game.discardPile.length} discarded</span>
+            <span className="text-white/30 text-xs h-4">{game.discardPile.length} set aside</span>
           </div>
           )}
         </div>
@@ -1008,7 +1008,7 @@ export function GameTable({
                   chrome.askRankIntent
                     ? pickedRank
                       ? `Asking for ${pickedRank}s — use Ask above, or click a player`
-                      : 'Or click a card to pick its rank'
+                      : 'Or tap a card to pick its number or face'
                     : undefined
                 }
                 playerName={player.name}

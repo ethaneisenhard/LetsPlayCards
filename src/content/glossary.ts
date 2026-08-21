@@ -29,15 +29,15 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     metaDescription: "Learn how to play War, the simplest two-player card game. Full rules, war tie-breakers, and tips to finish faster.",
     intro: 'War is the simplest card game there is — no decisions, no strategy, just luck. Two players split the deck and flip cards until someone owns all 52.',
     sections: [
-      { heading: 'Setup', body: 'Shuffle a full 52-card deck and deal it out so each player has 26 cards, face-down in a stack. Players do not look at their cards.' },
+      { heading: 'Setup', body: 'Shuffle a full 52-card pack and split it so each player has 26 cards, face-down in a stack. Players do not look at their cards.' },
       { heading: 'How to Play', body: 'Both players flip their top card simultaneously. The higher card wins and collects both, placing them at the bottom of their stack. Aces are high.' },
-      { heading: 'War (ties)', body: 'When the two cards match in rank, players go to war: each places three cards face-down and one face-up. The higher face-up card wins all ten cards. If it ties again, war repeats.' },
+      { heading: 'War (ties)', body: 'When the two cards match in number or face, players go to war: each places three cards face-down and one face-up. The higher face-up card wins all ten cards. If it ties again, war repeats.' },
       { heading: 'Winning', body: 'The player who collects all 52 cards wins. Games can run long, so many players cap the number of wars or play until someone runs low.' },
       { heading: 'Strategy', body: 'There is no real strategy — the outcome is pure chance. To speed up play, some variants have players surrender two cards each in a war instead of three.' },
     ],
     faq: [
       { q: 'How long does a game of War take?', a: 'A full game can take 10–30 minutes depending on how many wars occur. It is entirely luck-driven.' },
-      { q: 'Can War be played with more than two players?', a: 'Yes — deal the deck evenly to three or four players. Everyone flips at once; the highest card wins the pile, and all tied players go to war.' },
+      { q: 'Can War be played with more than two players?', a: 'Yes — split the pack evenly among three or four players. Everyone flips at once; the highest card wins the pile, and all tied players go to war.' },
       { q: 'What happens when a player runs out of cards mid-war?', a: 'That player plays their remaining cards face-up; if they still lose, they are out and the winner takes the pile.' },
     ],
     related: ['slapjack', 'egyptian_ratscrew', 'beggar_my_neighbor'],
@@ -47,19 +47,19 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   go_fish: {
     slug: 'go_fish', type: 'go_fish', name: 'Go Fish',
     title: 'Go Fish Card Game Rules — How to Play Go Fish',
-    metaDescription: "Learn how to play Go Fish, the classic family card game. Full rules for asking, drawing, and scoring books of four.",
+    metaDescription: "Learn how to play Go Fish. Ask for a number or face you already have, take matching cards, and collect sets of four.",
     intro: 'Go Fish is a friendly matching game where players ask each other for cards to build sets of four. It is one of the first card games most people learn.',
     sections: [
-      { heading: 'Setup', body: 'Deal 7 cards each with 2–3 players, or 5 cards each with 4 or more. The rest of the deck is the draw pile.' },
-      { heading: 'How to Play', body: 'On your turn, pick a rank you hold and ask Anyone or a named seat. If they have that rank, they give you every matching card and you ask again.' },
-      { heading: 'Going Fish', body: 'If they have none, they say Go Fish. You draw one card from the pile and your turn ends.' },
-      { heading: 'Scoring', body: 'Four cards of a rank is a book (one point). Most books wins when the draw pile and every hand are empty.' },
-      { heading: 'Winning', body: 'Most books when the deck and every hand are empty.' },
+      { heading: 'Setup', body: 'Each player starts with 7 cards when there are 2–3 players, or 5 cards with 4 or more. The rest of the pack is the draw pile.' },
+      { heading: 'How to Play', body: 'On your turn, pick a number or face you already have (2, 7, Queen) and ask Anyone or a named player. If they have that number or face, they give you every matching card and you ask again.' },
+      { heading: 'Going Fish', body: 'If they have none, they say Go Fish. You take one card from the pile and your turn ends.' },
+      { heading: 'Scoring', body: 'Four cards with the same number or face is a set of four (one point). Most sets wins when the draw pile is gone and no one is holding cards.' },
+      { heading: 'Winning', body: 'Most sets of four when the pile is gone and no one is holding cards.' },
     ],
     faq: [
-      { q: 'How many cards do you deal in Go Fish?', a: '5 cards per player for 4+ players, or 7 cards each for 2–3 players.' },
-      { q: 'Can you ask for a rank you have none of?', a: 'No — most rule sets require you to hold at least one card of the rank you ask for.' },
-      { q: 'What ends a game of Go Fish?', a: 'The game ends when the draw pile is empty and a player runs out of cards, or when all 13 books are made. Most books wins.' },
+      { q: 'How many cards does each player start with in Go Fish?', a: '5 cards per player for 4+ players, or 7 cards each for 2–3 players.' },
+      { q: 'Can you ask for a number or face you do not have?', a: 'No — you must already hold at least one card of the number or face you ask for.' },
+      { q: 'What ends a game of Go Fish?', a: 'The game ends when the draw pile is gone and no one is holding cards, or when all 13 sets of four are made. Most sets wins.' },
     ],
     related: ['old_maid', 'concentration', 'rummy'],
     difficulty: 1, timeMinutes: '10–20 min', playerCount: '2–6', status: 'live',
@@ -87,16 +87,17 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     slug: 'hearts', type: 'hearts', name: 'Hearts',
     title: 'Hearts Card Game Rules — How to Play Hearts',
     metaDescription: "Learn how to play Hearts: full rules for the classic trick-taking card game, including scoring, shooting the moon, and strategy.",
-    intro: 'Hearts is a trick-taking game where the goal is to avoid winning hearts and the queen of spades. The player with the lowest score at the end wins.',
+    intro: 'Hearts is a game where each round everyone plays one card. You want to avoid winning hearts and the queen of spades. The player with the lowest score at the end wins.',
     sections: [
-      { heading: 'Setup', body: 'Deal the full deck evenly — 13 cards each for 4 players. The player holding the 2 of clubs leads the first trick.' },
-      { heading: 'How to Play', body: 'The leader plays any card. Each player must follow suit if they can; otherwise they may play any card. The highest card of the led suit wins the trick, unless a heart was played on a non-heart lead.' },
-      { heading: 'Scoring', body: 'Each heart is worth 1 point and the queen of spades is worth 13. The winner of each trick collects its cards. When someone reaches 100 points, the lowest score wins the game.' },
+      { heading: 'Setup', body: 'Split the full pack evenly — 13 cards each for 4 players. The player holding the 2 of clubs plays first.' },
+      { heading: 'How to Play', body: 'The leader plays any card. Each player must play the same shape (hearts, diamonds, clubs, or spades) if they can; otherwise they may play any card. Highest of that shape wins the pile, unless a heart was played when clubs, diamonds, or spades led.' },
+      { heading: 'Scoring', body: 'Each heart is worth 1 point and the queen of spades is worth 13. The winner of each pile collects its cards. When someone reaches 100 points, the lowest score wins the game.' },
       { heading: 'Shooting the Moon', body: 'If one player captures all 13 hearts and the queen of spades, they "shoot the moon" — scoring 0 while every opponent scores 26.' },
+      { heading: 'Winning', body: 'Lowest score when someone reaches 100. Avoid hearts (1 each) and the queen of spades (13).' },
       { heading: 'Strategy', body: 'Early game, dump high cards and the queen of spades. If you must take hearts, consider going all-in for the moon rather than taking a few.' },
     ],
     faq: [
-      { q: 'What happens if you shoot the moon in Hearts?', a: 'You score 0 and every other player scores 26 points. It is a high-risk, high-reward play.' },
+      { q: 'What happens if you take every heart and the queen of spades (shoot the moon)?', a: 'You score 0 and every other player scores 26 points. It is a high-risk, high-reward play.' },
       { q: 'Can you lead a heart in Hearts?', a: 'Hearts cannot be led until a heart has already been played ("broken"), unless a player holds only hearts.' },
       { q: 'How many points is the queen of spades worth?', a: '13 points — as much as every heart combined.' },
     ],
@@ -110,7 +111,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     metaDescription: "Learn how to play Crazy Eights, the shedding game that inspired Uno. Full rules for matching, wild eights, and winning.",
     intro: 'Crazy Eights is a fast shedding game where players match the top card by suit or rank. Eights are wild. The first player to empty their hand wins.',
     sections: [
-      { heading: 'Setup', body: 'Deal 5–7 cards each (7 for two players, 5 for more). Turn the next card face-up to start the discard pile; the rest is the draw pile.' },
+      { heading: 'Setup', body: 'Deal 5–7 cards each (7 for two players, 5 for more). Turn the next card face-up to start the leftover pile; the rest is the draw pile.' },
       { heading: 'How to Play', body: 'Match the top card by suit or rank, or play an 8 (wild) and choose the new suit. If you cannot play, draw until you can or the pile empties.' },
       { heading: 'Scoring', body: 'The first player to run out of cards wins the round and scores points from opponents\' remaining cards — 50 per 8, 10 per face card, face value otherwise.' },
       { heading: 'Strategy', body: 'Save your eights for when you are stuck. Hold multiple suits so you are never forced to draw.' },
@@ -130,10 +131,10 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     metaDescription: "Learn how to play Rummy: full rules for drawing, melding sets and runs, and going out. Includes scoring and strategy.",
     intro: 'Rummy is a matching game where players form sets (three or four of a kind) and runs (three or more consecutive cards of one suit). The first to meld all their cards wins.',
     sections: [
-      { heading: 'Setup', body: 'Deal 10 cards each for two players (7 for 3–4, 6 for 5–6). Turn one card up to start the discard pile; the rest is the stock.' },
+      { heading: 'Setup', body: 'Deal 10 cards each for two players (7 for 3–4, 6 for 5–6). Turn one card up to start the leftover pile; the rest is the draw pile.' },
       { heading: 'How to Play', body: 'Draw one card (stock or discard), then either meld sets and runs or lay off onto existing melds, then discard one card to end your turn.' },
       { heading: 'Going Out', body: 'When you can meld or lay off your last card, you go out and win the hand. Opponents score deadwood — the value of unmelded cards (face cards 10, aces 1, others face value).' },
-      { heading: 'Strategy', body: 'Watch the discard pile to infer opponents\' hands. Hold middle cards (6–8) which fit into more runs than aces or kings.' },
+      { heading: 'Strategy', body: 'Watch the leftover pile to infer opponents\' hands. Hold middle cards (6–8) which fit into more runs than aces or kings.' },
     ],
     faq: [
       { q: 'What is a meld in Rummy?', a: 'A set (3–4 cards of the same rank) or a run (3+ consecutive cards of the same suit).' },
@@ -174,7 +175,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Four players partner up across the table. Deal all 52 cards — 13 each.' },
       { heading: 'Bidding', body: 'Each player bids the number of tricks their team will take. Partners\' bids add together to form the team contract.' },
-      { heading: 'How to Play', body: 'Players must follow suit if able; otherwise they may play any card, including a spade. Spades cannot be led until they are broken (played). The highest spade wins the trick.' },
+      { heading: 'How to Play', body: 'Players must play the same shape (hearts, diamonds, clubs, or spades) if able; otherwise they may play any card, including a spade. Spades cannot be led until they are broken (played). The highest spade wins the trick.' },
       { heading: 'Scoring', body: 'Making the bid scores 10 points per trick bid plus 1 per overtrick ("bag"). Missing the bid ("set") loses 10 per trick bid. Ten bags is a 100-point penalty. First to 500 wins.' },
     ],
     faq: [
@@ -214,7 +215,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Use only the 9, 10, J, Q, K, and A of each suit (24 cards). Deal 5 cards each to four players; one card is turned up to offer trump.' },
       { heading: 'Trump and Bowers', body: 'The jack of trump is the "right bower" (highest card), and the other jack of the same color is the "left bower" (second highest). Then A, K, Q, 10, 9.' },
-      { heading: 'How to Play', body: 'The team that names trump must take at least 3 of the 5 tricks. Follow suit if able; trump beats everything except a higher trump.' },
+      { heading: 'How to Play', body: 'The team that names trump must take at least 3 of the 5 tricks. Play the same shape (hearts, diamonds, clubs, or spades) if able; trump beats everything except a higher trump.' },
       { heading: 'Scoring', body: 'Making 3–4 tricks scores 1 point; all 5 tricks is a "march" for 2 points; failing is "euchred" and the opponents score 2. First to 10 wins. Going alone and winning all 5 scores 4.' },
     ],
     faq: [
@@ -233,7 +234,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     intro: 'Whist is the classic trick-taking game with no bidding. Two partnerships race to win tricks, with the last card dealt setting trump.',
     sections: [
       { heading: 'Setup', body: 'Deal all 52 cards to four players in partnerships. The last card, shown to all, sets the trump suit for the hand.' },
-      { heading: 'How to Play', body: 'The player left of the dealer leads. Follow suit if able; the highest card of the led suit or highest trump wins the trick. The trick winner leads next.' },
+      { heading: 'How to Play', body: 'The player left of the dealer leads. Play the same shape (hearts, diamonds, clubs, or spades) if able; the highest card of the led suit or highest trump wins the trick. The trick winner leads next.' },
       { heading: 'Scoring', body: 'A partnership scores 1 point for every trick above six (the "book"). First to 5 points (or 7 in some rules) wins the game.' },
     ],
     faq: [
@@ -252,7 +253,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Hands shrink and grow each round. Deal each player a number of cards starting from 1 and climbing to the max, then back down. One card is turned up to set trump each round.' },
       { heading: 'Bidding', body: 'Each player bids the exact number of tricks they will take. The dealer\'s bid is constrained so the total does not equal the number of cards dealt.' },
-      { heading: 'How to Play', body: 'Follow suit if able; highest trump or led-suit card wins. Standard trick play.' },
+      { heading: 'How to Play', body: 'Play the same shape (hearts, diamonds, clubs, or spades) if able; highest trump or led-suit card wins. Standard trick play.' },
       { heading: 'Scoring', body: 'Make your bid exactly: 10 points plus 1 per trick. Miss by any amount: 0 points. Highest total after all rounds wins.' },
     ],
     faq: [
@@ -270,7 +271,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     metaDescription: "Learn how to play Gin Rummy, the two-player melding game. Full rules for knocking, going gin, and undercutting.",
     intro: 'Gin Rummy is a two-player Rummy variant where you knock when your deadwood is low. The goal is to meld all your cards or go out with minimal deadwood.',
     sections: [
-      { heading: 'Setup', body: 'Deal 10 cards each. Turn one card up to start the discard pile; the rest is the stock.' },
+      { heading: 'Setup', body: 'Deal 10 cards each. Turn one card up to start the leftover pile; the rest is the draw pile.' },
       { heading: 'How to Play', body: 'Draw from stock or discard, then discard one card. Form sets and runs. You may knock when your deadwood (unmelded cards) totals 10 or fewer.' },
       { heading: 'Gin', body: 'If you meld all 10 cards with no deadwood, you "go gin" for a 25-point bonus. The opponent cannot undercut a gin.' },
       { heading: 'Scoring', body: 'After a knock, both reveal. If the knocker\'s deadwood is lower, they score the difference; if the opponent\'s is lower or equal, the opponent "undercuts" for 25 plus the difference. First to 100 wins.' },
@@ -287,15 +288,15 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   rummy_500: {
     slug: 'rummy_500', type: 'rummy_500', name: 'Rummy 500',
     title: 'Rummy 500 Rules — How to Play Rummy 500',
-    metaDescription: "Learn how to play Rummy 500, the point-scoring Rummy variant. Full rules for drawing from the discard pile and scoring to 500.",
-    intro: 'Rummy 500 (500 Rum) is a Rummy variant scored to 500 points, where you can draw from the discard pile and lay off onto any meld on the table.',
+    metaDescription: "Learn how to play Rummy 500, the point-scoring Rummy variant. Full rules for drawing from the leftover pile and scoring to 500.",
+    intro: 'Rummy 500 (500 Rum) is a Rummy variant scored to 500 points, where you can draw from the leftover pile and lay off onto any meld on the table.',
     sections: [
-      { heading: 'Setup', body: 'Deal 7 cards each (13 with two players). Turn one card up for the discard pile; the rest is the stock.' },
+      { heading: 'Setup', body: 'Deal 7 cards each (13 with two players). Turn one card up for the leftover pile; the rest is the draw pile.' },
       { heading: 'How to Play', body: 'Draw the top stock card or any discard (taking all cards above it). Meld sets and runs, lay off onto opponents\' melds, then discard. Aces can be high or low.' },
       { heading: 'Scoring', body: 'Aces 15, face cards 10, 2–10 face value. Melded cards score positive, deadwood negative. Going out scores a bonus. First to 500 wins.' },
     ],
     faq: [
-      { q: 'Can you draw from the discard pile in Rummy 500?', a: 'Yes — and you must take every card on top of the one you draw, which can give you many cards at once.' },
+      { q: 'Can you draw from the leftover pile in Rummy 500?', a: 'Yes — and you must take every card on top of the one you draw, which can give you many cards at once.' },
       { q: 'How many points to win Rummy 500?', a: 'The first player to 500 points wins the game.' },
     ],
     related: ['rummy', 'gin_rummy', 'canasta'],
@@ -305,12 +306,12 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   canasta: {
     slug: 'canasta', type: 'canasta', name: 'Canasta',
     title: 'Canasta Card Game Rules — How to Play Canasta',
-    metaDescription: "Learn how to play Canasta, the partnership melding game with two decks. Rules for canastas, the discard pile, and scoring to 5000.",
+    metaDescription: "Learn how to play Canasta, the partnership melding game with two decks. Rules for canastas, the leftover pile, and scoring to 5000.",
     intro: 'Canasta is a partnership melding game played with two decks and the jokers. Teams race to complete "canastas" — seven cards of the same rank.',
     sections: [
       { heading: 'Setup', body: 'Two 52-card decks plus jokers, four players in two partnerships, 11 cards each. Wild cards are the jokers and the twos.' },
-      { heading: 'How to Play', body: 'Draw one card, meld sets of three or more of a rank (7 of a rank is a canasta), and discard. You may pick up the discard pile if you can immediately meld its top card.' },
-      { heading: 'Freezing', body: 'A discard pile with a wild or a 3 on top is "frozen" — it can only be taken with a natural pair in hand, which protects it.' },
+      { heading: 'How to Play', body: 'Draw one card, meld sets of three or more of a rank (7 of a rank is a canasta), and discard. You may pick up the leftover pile if you can immediately meld its top card.' },
+      { heading: 'Freezing', body: 'A leftover pile with a wild or a 3 on top is "frozen" — it can only be taken with a natural pair in hand, which protects it.' },
       { heading: 'Scoring', body: 'Natural canasta 500, mixed 300, red 3s 100 each. First team to 5000 wins. Going out requires at least one canasta.' },
     ],
     faq: [
@@ -427,7 +428,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       { heading: 'Setup', body: 'Deal all cards evenly. The player with the 3 of clubs (or lowest card) leads the first round.' },
       { heading: 'How to Play', body: 'Play a single card or a set of equal rank. The next player must beat it with a higher card or higher set of the same size, or pass. Twos are high; when everyone passes, the pile clears and the last player leads.' },
       { heading: 'Ranks', body: 'In the next round, the President gives their two worst cards to the Scum and receives the Scum\'s two best. The President leads.' },
-      { heading: 'Winning', body: 'The first to empty their hand is President, the last is Scum. There is no single winner across rounds — it is a game of status and bragging rights.' },
+      { heading: 'Winning', body: 'The first to play all their cards is President, the last is Scum. There is no single winner across rounds — it is a game of status and bragging rights.' },
     ],
     faq: [
       { q: 'What are other names for President?', a: 'Asshole, Scum, Capitalism, and Kings & Assholes are all the same game with minor rule differences.' },
@@ -444,10 +445,10 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     metaDescription: "Learn how to play Klondike Solitaire, the classic one-player patience game. Rules for the tableau, foundations, and stock.",
     intro: 'Klondike is the solitaire everyone knows. Build four foundation piles from Ace to King while organizing the tableau by alternating color.',
     sections: [
-      { heading: 'Setup', body: 'Deal seven tableau columns: one card in the first, two in the second, up to seven — only the top card of each column face-up. The rest is the stock.' },
+      { heading: 'Setup', body: 'Deal seven tableau columns: one card in the first, two in the second, up to seven — only the top card of each column face-up. The rest is the draw pile.' },
       { heading: 'How to Play', body: 'Move face-up cards between columns in descending rank and alternating color. Empty columns may be filled with a king. Move aces to the four foundations and build up by suit.' },
-      { heading: 'The Stock', body: 'Draw one or three cards at a time from the stock to a waste pile, which you can play from.' },
-      { heading: 'Winning', body: 'You win by moving all 52 cards to the four foundations, ace through king in each suit.' },
+      { heading: 'The Stock', body: 'Draw one or three cards at a time from the draw pile to a waste pile, which you can play from.' },
+      { heading: 'Winning', body: 'You win by moving all 52 cards to the four Ace-to-King piles, one for each shape (hearts, diamonds, clubs, and spades).' },
     ],
     faq: [
       { q: 'What is the difference between draw-one and draw-three Klondike?', a: 'Draw-one reveals one stock card at a time (easier); draw-three reveals three and only the top is playable (harder).' },
@@ -465,7 +466,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Deal all 52 cards face-up into eight tableau columns. Four free cells and four foundations start empty.' },
       { heading: 'How to Play', body: 'Build tableau columns down by rank, alternating color. Use the four free cells to temporarily hold cards. Move single cards, or whole sequences if you have enough empty free cells and columns.' },
-      { heading: 'Winning', body: 'Move all cards to the four foundations, ace to king by suit.' },
+      { heading: 'Winning', body: 'Move all cards to the four Ace-to-King piles, one shape each (hearts, diamonds, clubs, or spades).' },
       { heading: 'Strategy', body: 'Keep free cells open whenever possible — empty cells are your most valuable resource for moving sequences.' },
     ],
     faq: [
@@ -485,7 +486,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       { heading: 'Setup', body: 'Two 52-card decks. Ten tableau columns — the first four with six cards each, the rest with five. Only the top card of each is face-up.' },
       { heading: 'How to Play', body: 'Build down by rank within a suit. Deal a new row of ten cards when stuck. Complete a king-to-ace sequence of one suit and it is removed.' },
       { heading: 'Difficulty Levels', body: 'One suit (easiest), two suits, or four suits (hardest). Four-suit is the classic challenge.' },
-      { heading: 'Winning', body: 'Remove all eight suits to win. The goal is to clear every column.' },
+      { heading: 'Winning', body: 'Remove all eight King-to-Ace runs to win. The goal is to clear every column.' },
     ],
     faq: [
       { q: 'How many decks are in Spider Solitaire?', a: 'Two standard 52-card decks, for 104 cards total.' },
@@ -524,7 +525,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'A 48-card deck — two copies of the 9 through Ace in each suit. Deal 12 cards to each of four players.' },
       { heading: 'Melding', body: 'After trump is set, players lay down melds for points: marriages (K-Q of trump), aces around, kings around, and the pinochle (queen of spades + jack of diamonds).' },
-      { heading: 'Trick Play', body: 'Follow suit, trump as needed, and win tricks. Each ace, ten, and king captured in tricks scores points.' },
+      { heading: 'Trick Play', body: 'Play the same shape (hearts, diamonds, clubs, or spades), trump as needed, and win tricks. Each ace, ten, and king captured in tricks scores points.' },
       { heading: 'Scoring', body: 'Melds plus trick points are tallied. First partnership to 150 points wins the game.' },
     ],
     faq: [
@@ -599,7 +600,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       { heading: 'Setup', body: 'Deal 3 cards each and 3 to the center as a discard pool, plus a draw pile. Each player starts with 3 lives.' },
       { heading: 'How to Play', body: 'On your turn, swap one card from your hand with one from the discard pool or draw pile. Aces are 11, face cards 10, others face value — all in the same suit count.' },
       { heading: 'Knocking', body: 'When you think you have the highest hand, knock; everyone gets one more turn, then hands are revealed. The lowest hand loses a life.' },
-      { heading: 'Winning', body: 'A hand of exactly 31 wins immediately. Otherwise the last player with lives remaining wins the game.' },
+      { heading: 'Winning', body: 'Exactly 31 wins immediately. Otherwise the last player with lives remaining wins the game.' },
     ],
     faq: [
       { q: 'How much is an ace worth in Thirty-One?', a: '11 points, and face cards are worth 10.' },
@@ -615,7 +616,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     metaDescription: "Learn how to play Cassino, the fishing card game of captures and builds. Full rules and scoring.",
     intro: 'Cassino is a "fishing" game where players capture cards from the table by matching or summing values, earning points for specific captures.',
     sections: [
-      { heading: 'Setup', body: 'Deal 4 cards each and 4 to the table face-up. The rest is the stock.' },
+      { heading: 'Setup', body: 'Deal 4 cards each and 4 to the table face-up. The rest is the draw pile.' },
       { heading: 'How to Play', body: 'On your turn play one card to capture table cards matching its value, or summing to it. Alternatively, "build" a pile by combining cards into a value you can capture later.' },
       { heading: 'Scoring', body: 'Points for most cards (3), most spades (1), the 10 of diamonds "big cassino" (2), the 2 of spades "little cassino" (1), and aces (1 each). First to 21 wins.' },
     ],
@@ -635,7 +636,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Each player gets 7 cards; the rest is a draw pile with the top card flipped to start a discard.' },
       { heading: 'How to Play', body: 'Play cards onto the four corner piles in descending order, alternating red and black. Kings start new corner piles. You may also play onto opponents\' piles. Draw if you cannot play.' },
-      { heading: 'Winning', body: 'The first player to empty their hand wins.' },
+      { heading: 'Winning', body: 'The first player to play every card they are holding wins.' },
     ],
     faq: [
       { q: 'Why are kings special in Kings in the Corner?', a: 'A king is the only card that can start a new corner pile, since nothing ranks above it.' },
@@ -653,7 +654,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Each player has a stack of 20 cards and a hand of 5. Two center cards start the play piles.' },
       { heading: 'How to Play', body: 'Play a card one higher or one lower than the top center card onto either pile, refilling your hand from your stack. There are no turns — whoever is fastest plays.' },
-      { heading: 'Winning', body: 'The first player to empty both their hand and stack wins.' },
+      { heading: 'Winning', body: 'The first player to empty both the cards they are holding and their stack wins.' },
     ],
     faq: [
       { q: 'Can you play Speed with more than two players?', a: 'It is designed for two. "Spit" is the three-player variant.' },
@@ -711,7 +712,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     ],
     faq: [
       { q: 'What are other names for I Doubt It?', a: 'Cheat, Bullshit, and Bluff are the same game.' },
-      { q: 'What happens if you call "I doubt it" and they were telling the truth?', a: 'You take the entire discard pile as a penalty.' },
+      { q: 'What happens if you call "I doubt it" and they were telling the truth?', a: 'You take the entire leftover pile as a penalty.' },
     ],
     related: ['cheat', 'president', 'chase_the_ace'],
     difficulty: 2, timeMinutes: '20–40 min', playerCount: '3–6', status: 'live',
@@ -725,7 +726,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Deal all cards evenly. Players play cards face-down in rank order, declaring what they are.' },
       { heading: 'How to Play', body: 'You may play any cards regardless of what you declare. Another player can challenge by saying "Cheat!" If you lied, you take the pile; if you told the truth, the challenger takes it.' },
-      { heading: 'Winning', body: 'The first player to empty their hand wins.' },
+      { heading: 'Winning', body: 'The first player to play every card they are holding wins.' },
     ],
     faq: [
       { q: 'Is Cheat the same as I Doubt It?', a: 'Yes — Cheat, I Doubt It, and Bullshit are all the same bluffing game.' },
@@ -797,8 +798,8 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     sections: [
       { heading: 'Setup', body: 'Deal 6 cards each. Players bid on how many of the four "game points" they will capture.' },
       { heading: 'Game Points', body: 'The four points are: High (highest trump played), Low (lowest trump played), Jack (of trump), and Game (the sum of card values captured in tricks).' },
-      { heading: 'How to Play', body: 'The highest bidder names trump and leads. Follow suit if able, trump to win. The bidder must make their bid or be set back by that amount.' },
-      { heading: 'Winning', body: 'Points are scored each hand. First to 7, 11, or 21 points (by agreement) wins the game.' },
+      { heading: 'How to Play', body: 'The highest bidder names trump and leads. Play the same shape (hearts, diamonds, clubs, or spades) if able, trump to win. The bidder must make their bid or be set back by that amount.' },
+      { heading: 'Winning', body: 'Points are scored each round. First to 7, 11, or 21 points (by agreement) wins the game.' },
     ],
     faq: [
       { q: 'What are the four points in Pitch?', a: 'High, Low, Jack, and Game — the highest trump, lowest trump, jack of trump, and the most card-value in tricks.' },

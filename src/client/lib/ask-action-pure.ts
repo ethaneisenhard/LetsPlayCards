@@ -47,7 +47,7 @@ export function askButtonLabel(
 export function askTurnHint(rank: string | null): string {
   return rank
     ? `● Your turn · ask for ${rank}s`
-    : '● Your turn · ask for a rank you hold';
+    : '● Your turn · ask for a number or face you already have';
 }
 
 export function goFishAskAction(
@@ -80,7 +80,7 @@ export function seatActionLabel(input: {
   if (input.askRank) {
     return input.rank
       ? `Ask ${input.name} for ${input.rank}s`
-      : `Ask ${input.name} — pick a rank first`;
+      : `Ask ${input.name} — pick a number or face first`;
   }
   if (input.drawFrom) return `Draw from ${input.name}`;
   return input.name;

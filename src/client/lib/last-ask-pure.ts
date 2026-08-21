@@ -25,3 +25,12 @@ export function bookScoreLine(
   if (players.length === 0 || Object.keys(counts).length === 0) return null;
   return players.map((p) => `${p.name} ${counts[p.id] ?? 0}`).join(' · ');
 }
+
+/** Human label for four-of-a-kind sets. Engine state stays `books`. */
+export function setCountLabel(n: number): string {
+  return n === 1 ? '1 set' : `${n} sets`;
+}
+
+export function setScoreHeading(): string {
+  return 'Sets of four';
+}

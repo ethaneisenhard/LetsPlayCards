@@ -11,6 +11,9 @@ import { resolveTableChrome } from '../../client/lib/table-chrome-pure';
 import { resolveFeltActions, isUnknownIntentError } from '../../client/lib/felt-actions-pure';
 import { resolveTableKind } from './playability-registry-pure';
 import { GLOSSARY } from '../../content/glossary';
+import { askTurnHint, seatActionLabel } from '../../client/lib/ask-action-pure';
+import { lastAskLine, setCountLabel, setScoreHeading } from '../../client/lib/last-ask-pure';
+import { undefinedJargon } from './plain-copy-pure';
 
 export type RulesFail = { id: string; detail: string };
 
@@ -27,48 +30,48 @@ export type RulesAudit = {
 const INTENT_NEEDLES: Record<string, { id: string; re: RegExp; why: string }[]> = {
   'gofish-ask': [
     { id: 'ask', re: /\bask\b/i, why: 'the table move is Ask' },
-    { id: 'hold', re: /\bhold\b/i, why: 'you must hold the rank you ask for' },
-    { id: 'pick', re: /\b(pick|tap|choose)\b/i, why: 'pick a rank on the Ask control' },
-    { id: 'who', re: /\banyone\b|\bseat\b|\bwho\b/i, why: 'ask Anyone or a named seat' },
-    { id: 'miss', re: /go fish|\bdraw\b/i, why: 'a miss is Go Fish (draw)' },
+    { id: 'hold', re: /\b(hold|already have|you have)\b/i, why: 'you must already have the number or face you ask for' },
+    { id: 'pick', re: /\b(pick|tap|choose)\b/i, why: 'pick a number or face on the Ask control' },
+    { id: 'who', re: /\banyone\b|\bplayer\b|\bwho\b/i, why: 'ask Anyone or a named player' },
+    { id: 'miss', re: /go fish|\bdraw\b|\btake one\b/i, why: 'a miss is Go Fish (take one from the pile)' },
   ],
   'draw-from': [
     { id: 'draw', re: /\bdraw\b/i, why: 'the table move is Draw' },
     { id: 'from', re: /\bfrom\b/i, why: 'draw from another seat' },
   ],
-  hit: [{ id: 'hit', re: /\bhit\b/i, why: 'Hit button' }],
-  stand: [{ id: 'stand', re: /\bstand\b/i, why: 'Stand button' }],
+  hit: [{ id: 'hit', re: /take a card|\bhit\b/i, why: 'Take a card' }],
+  stand: [{ id: 'stand', re: /\bstay\b|\bstand\b/i, why: 'Stay' }],
   'war-play': [{ id: 'flip', re: /\bflip/i, why: 'flip your pile' }],
   'war-collect': [{ id: 'collect', re: /\b(collect|win the|takes? the)\b/i, why: 'winner collects' }],
   flip: [{ id: 'flip', re: /\bflip/i, why: 'flip a card' }],
   slap: [{ id: 'slap', re: /\bslap\b/i, why: 'Slap' }],
   snap: [{ id: 'snap', re: /\bsnap\b/i, why: 'Snap' }],
   play: [{ id: 'play', re: /\bplay/i, why: 'play a card' }],
-  discard: [{ id: 'discard', re: /\bdiscard\b/i, why: 'discard' }],
-  draw: [{ id: 'draw', re: /\bdraw\b/i, why: 'draw' }],
+  discard: [{ id: 'discard', re: /\bdiscard\b|put (one |a card )?aside/i, why: 'put one aside' }],
+  draw: [{ id: 'draw', re: /\bdraw\b|take (a |one )?cards?|take more|swap or keep/i, why: 'take or swap a card' }],
   pass: [{ id: 'pass', re: /\bpass\b/i, why: 'Pass' }],
-  knock: [{ id: 'knock', re: /\bknock\b/i, why: 'Knock' }],
+  knock: [{ id: 'knock', re: /\bknock\b|stop here|stop the round/i, why: 'Stop here' }],
   swap: [{ id: 'swap', re: /\bswap\b/i, why: 'Swap' }],
   bid: [{ id: 'bid', re: /\bbid\b/i, why: 'bid' }],
   'set-trump': [{ id: 'trump', re: /\btrump\b/i, why: 'name trump' }],
   bet: [{ id: 'bet', re: /\bbet\b/i, why: 'bet' }],
-  check: [{ id: 'check', re: /\bcheck\b/i, why: 'Check' }],
-  call: [{ id: 'call', re: /\bcall\b/i, why: 'Call' }],
-  raise: [{ id: 'raise', re: /\braise\b/i, why: 'Raise' }],
-  fold: [{ id: 'fold', re: /\bfold\b/i, why: 'Fold' }],
-  showdown: [{ id: 'showdown', re: /\bshowdown\b/i, why: 'Showdown' }],
-  capture: [{ id: 'capture', re: /\bcapture\b/i, why: 'Capture' }],
-  build: [{ id: 'build', re: /\bbuild\b/i, why: 'Build' }],
-  trail: [{ id: 'trail', re: /\btrail\b/i, why: 'Trail' }],
-  'capture-build': [{ id: 'take-build', re: /\bbuild\b/i, why: 'take a build' }],
-  'discard-to-crib': [{ id: 'crib', re: /\bcrib\b/i, why: 'to the crib' }],
+  check: [{ id: 'check', re: /\bno bet\b|\bcheck\b/i, why: 'No bet' }],
+  call: [{ id: 'call', re: /\bmatch bet\b|\bcall\b/i, why: 'Match bet' }],
+  raise: [{ id: 'raise', re: /\bbet more\b|\braise\b/i, why: 'Bet more' }],
+  fold: [{ id: 'fold', re: /\bgive up\b|\bfold\b/i, why: 'Give up' }],
+  showdown: [{ id: 'showdown', re: /\bcompare\b|\bshowdown\b/i, why: 'Compare' }],
+  capture: [{ id: 'capture', re: /\bcapture\b|take match/i, why: 'Take match' }],
+  build: [{ id: 'build', re: /\bbuild\b|make a pile/i, why: 'Make a pile' }],
+  trail: [{ id: 'trail', re: /\btrail\b|leave (a card|it)/i, why: 'Leave it' }],
+  'capture-build': [{ id: 'take-build', re: /\bbuild\b|take the pile|take a pile/i, why: 'Take the pile' }],
+  'discard-to-crib': [{ id: 'crib', re: /\bcrib\b|extra pile/i, why: 'to the extra pile' }],
   go: [{ id: 'go', re: /\bgo\b/i, why: 'Go' }],
   count: [{ id: 'count', re: /\bcount\b/i, why: 'Count' }],
-  meld: [{ id: 'meld', re: /\bmeld\b/i, why: 'meld' }],
+  meld: [{ id: 'meld', re: /\bmeld\b|lay down|set of|of a kind/i, why: 'lay down a set' }],
   layoff: [{ id: 'layoff', re: /\blay\s?off\b|\bmeld\b/i, why: 'layoff' }],
   move: [{ id: 'move', re: /\b(move|tableau|foundation|column|cell)\b/i, why: 'move cards on the tableau' }],
-  'draw-stock': [{ id: 'stock', re: /\b(stock|draw)\b/i, why: 'draw from the stock' }],
-  'deal-row': [{ id: 'deal-row', re: /\b(deal|row|stock)\b/i, why: 'deal a row' }],
+  'draw-stock': [{ id: 'stock', re: /\b(stock|draw pile|draw)\b/i, why: 'take a card from the draw pile' }],
+  'deal-row': [{ id: 'deal-row', re: /\b(deal|row|draw pile|stock)\b/i, why: 'lay a new row' }],
   doubt: [{ id: 'doubt', re: /\b(doubt|cheat|challenge)\b/i, why: 'challenge a bluff' }],
   'play-center': [{ id: 'center', re: /\bcenter\b|\bcorner\b/i, why: 'play to the center' }],
   'side-pile': [{ id: 'side', re: /\b(side|payoff)\b/i, why: 'side pile' }],
@@ -88,14 +91,6 @@ const PHANTOM_WORDS: { re: RegExp; intent: string; label: string }[] = [
   { re: /\bbid\b/i, intent: 'bid', label: 'bid' },
   { re: /go fish/i, intent: 'gofish-ask', label: 'Go Fish ask' },
   { re: /\bdraw from (an? )?(opponent|player|seat|them)\b/i, intent: 'draw-from', label: 'draw-from' },
-];
-
-const JARGON: { re: RegExp; define: RegExp; word: string }[] = [
-  { re: /\bbooks?\b/i, define: /\b(four|4)\b/i, word: 'book' },
-  { re: /\bdeadwood\b/i, define: /\b(unmelded|unmatched|left in|leftover)\b/i, word: 'deadwood' },
-  { re: /\bbower\b/i, define: /\bjack\b/i, word: 'bower' },
-  { re: /\bcanasta\b/i, define: /\b(7|seven)\b/i, word: 'canasta' },
-  { re: /\bdummy\b/i, define: /\b(expos|face-?up|shown)\b/i, word: 'dummy' },
 ];
 
 function extraCandidates(state: EngineState, playerId: string) {
@@ -161,7 +156,8 @@ function sheetText(type: GameType): { overlay: string; full: string; steps: read
   const card = rulesCardFor(config, glossary);
   const overlay = [card.tagline, card.win, ...card.steps].join('\n');
   const glossaryBody = (glossary?.sections ?? []).map((s) => `${s.heading} ${s.body}`).join('\n');
-  const full = [overlay, config.description, glossaryBody, glossary?.intro ?? ''].join('\n');
+  const faq = (glossary?.faq ?? []).map((f) => `${f.q} ${f.a}`).join('\n');
+  const full = [overlay, config.description, glossaryBody, glossary?.intro ?? '', faq].join('\n');
   return { overlay, full, steps: card.steps, win: card.win };
 }
 
@@ -255,11 +251,11 @@ export function auditGameRules(type: GameType): RulesAudit {
   if (felt.allowPlay && !chrome.askRankIntent && !chrome.drawFromIntent && !/\bplay/i.test(overlay)) {
     fails.push({ id: 'felt:play', detail: 'Felt lets you play a card; the sheet never says play' });
   }
-  if (felt.allowDraw && !/\bdraw\b/i.test(overlay)) {
-    fails.push({ id: 'felt:draw', detail: 'Felt has Draw; the sheet never says draw' });
+  if (felt.allowDraw && !/\bdraw\b|take (a |one )?cards?|take more|take from/i.test(overlay)) {
+    fails.push({ id: 'felt:draw', detail: 'The table lets you take a card; the sheet never says so' });
   }
-  if (felt.allowDiscard && !/\bdiscard\b/i.test(overlay)) {
-    fails.push({ id: 'felt:discard', detail: 'Felt has Discard; the sheet never says discard' });
+  if (felt.allowDiscard && !/\bdiscard\b|put (one |a card )?aside/i.test(overlay)) {
+    fails.push({ id: 'felt:discard', detail: 'The table lets you put a card aside; the sheet never says so' });
   }
 
   const coveredByChrome = new Set<string>();
@@ -275,8 +271,8 @@ export function auditGameRules(type: GameType): RulesAudit {
     const actorId = state.players[0].id;
     if (engineKnowsIntent(state, actorId, 'bid') && !/\bbid\b/i.test(overlay)) {
       fails.push({ id: 'first:bid', detail: 'The table starts with a bid; the sheet never says bid' });
-    } else if (chrome.showTableau && !/\b(tableau|foundation|column|stock|move)\b/i.test(overlay)) {
-      fails.push({ id: 'first:tableau', detail: 'Tableau games must say how to move cards on this board' });
+    } else if (chrome.showTableau && !/\b(column|pile|ace|king|draw pile|move|build)\b/i.test(overlay)) {
+      fails.push({ id: 'first:tableau', detail: 'Column games must say how to move cards on this board' });
     } else if (
       !chrome.askRankIntent &&
       !chrome.turnButtons.length &&
@@ -315,12 +311,14 @@ export function auditGameRules(type: GameType): RulesAudit {
 
   const keys = state ? gsKeys(state) : new Set<string>();
   if (keys.has('books')) {
-    if (!/\bbooks?\b/i.test(overlay)) fails.push({ id: 'win:books', detail: 'Engine scores books; the sheet never explains a book' });
-    if (!/\b(four|4)\b/i.test(overlay)) {
-      fails.push({ id: 'jargon:book', detail: '“Book” is used without saying it is four of a rank' });
+    if (/\bbooks?\b/i.test(full)) {
+      fails.push({ id: 'jargon:book', detail: 'Say four of a kind / set of four — “book” is jargon' });
     }
-    if (!/\b(empty|run out|deck)\b/i.test(`${overlay}\n${win}`)) {
-      fails.push({ id: 'win:empty', detail: 'Books are scored when the deck and hands empty; the sheet omits that' });
+    if (!/\bfour of a kind|set of four|four cards (with|of) the same/i.test(overlay)) {
+      fails.push({ id: 'win:sets', detail: 'Engine scores four-of-a-kind sets; the sheet never says so' });
+    }
+    if (!/\b(empty|gone|no one is holding)\b/i.test(`${overlay}\n${win}`)) {
+      fails.push({ id: 'win:empty', detail: 'Sets score when the pile is gone and no one is holding cards; the sheet omits that' });
     }
   }
   if (keys.has('lives') || keys.has('tokens')) {
@@ -330,10 +328,34 @@ export function auditGameRules(type: GameType): RulesAudit {
   }
   if (!win.trim()) fails.push({ id: 'win', detail: 'Rules overlay has no win line' });
 
-  for (const j of JARGON) {
-    if (j.re.test(overlay) && !j.define.test(overlay)) {
-      fails.push({ id: `jargon:${j.word}`, detail: `“${j.word}” appears without a table meaning` });
-    }
+  const glossary = GLOSSARY[type];
+  const winning = (glossary?.sections ?? [])
+    .filter((s) => /win/i.test(s.heading))
+    .map((s) => `${s.heading} ${s.body}`)
+    .join('\n');
+  const chromeLabels = chrome.turnButtons.map((b) => b.label).join('\n');
+  const tableCopy = [
+    overlay,
+    config.description,
+    winning,
+    chromeLabels,
+    askTurnHint(null),
+    seatActionLabel({ askRank: true, drawFrom: false, rank: null, name: 'Alice', handCount: 4 }),
+    setCountLabel(1),
+    setScoreHeading(),
+    lastAskLine({ fromName: 'You', toName: 'Alice', rank: '7', result: 'go_fish' }) ?? '',
+    'Choose a number or face you already have, then who — Anyone or a named player.',
+    'Shared cards · pick one of yours first',
+    'Your cards',
+    'Put aside',
+    'Leftover pile',
+    'Number or face',
+  ].join('\n');
+  for (const hit of undefinedJargon(tableCopy)) {
+    fails.push({
+      id: `jargon:${hit.word}`,
+      detail: `“${hit.word}” is undefined club talk: “${hit.sentence.slice(0, 88)}${hit.sentence.length > 88 ? '…' : ''}”`,
+    });
   }
 
   if (state) {
@@ -351,7 +373,6 @@ export function auditGameRules(type: GameType): RulesAudit {
     }
   }
 
-  const glossary = GLOSSARY[type];
   if (glossary?.playerCount) {
     const expected = config.minPlayers === config.maxPlayers
       ? String(config.minPlayers)
