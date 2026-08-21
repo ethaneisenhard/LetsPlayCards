@@ -11,10 +11,11 @@ describe('catalog playtest harness', () => {
     expect(summary.total).toBe(GAME_CATALOG.length);
     expect(summary.passed + summary.failed + summary.skipped).toBe(summary.total);
     expect(summary.results.every((r) => r.players >= 1 || r.status === 'skipped')).toBe(true);
-    expect(summary.results.every((r) => !/ViewLeak|leaked hidden|raw deck/.test(r.reason))).toBe(true);
-
     // eslint-disable-next-line no-console
     console.log(`\n${formatPlaytestReport(summary)}\n`);
+
+    const leaked = summary.results.filter((r) => /ViewLeak|leaked hidden|raw deck/.test(r.reason));
+    expect(leaked.map((r) => `${r.type}: ${r.reason}`)).toEqual([]);
   }, 180_000);
 
   it('War sits two players, deals, and takes legal turns', () => {

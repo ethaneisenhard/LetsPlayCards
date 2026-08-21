@@ -5,6 +5,17 @@ import { staticSeoRoute } from './seo/static-routes-pure';
 
 export { GameRoom };
 
+/** SPA HTML must not stick in the workers.dev asset CDN (unhashed /client.js did). */
+function noStore(res: Response): Response {
+  const headers = new Headers(res.headers);
+  headers.set('Cache-Control', 'no-store');
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
+async function spaShell(request: Request, env: Env): Promise<Response> {
+  return noStore(await env.ASSETS.fetch(new Request(new URL('/', request.url), request)));
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -33,7 +44,7 @@ export default {
         return env.GAME_ROOM.get(id).fetch(request);
       }
       // Browser navigation → SPA shell (root serves index.html without redirect).
-      return env.ASSETS.fetch(new Request(new URL('/', request.url), request));
+      return spaShell(request, env);
     }
 
     // Client-only matches (dev playground + vs-bots): SPA shell, no DO.
@@ -43,7 +54,7 @@ export default {
       url.pathname === '/solo' ||
       url.pathname.startsWith('/solo/')
     ) {
-      return env.ASSETS.fetch(new Request(new URL('/', request.url), request));
+      return spaShell(request, env);
     }
 
     // Pre-rendered SEO pages (glossary + history): real HTML, not the SPA shell.
@@ -55,7 +66,10 @@ export default {
       return env.ASSETS.fetch(new Request(new URL(seo.path, request.url), request));
     }
 
-    // Static assets (client.js, styles.css) and the SPA shell at "/".
+    // Static assets (hashed client/CSS) and the SPA shell at "/".
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      return spaShell(request, env);
+    }
     return env.ASSETS.fetch(request);
   },
 };

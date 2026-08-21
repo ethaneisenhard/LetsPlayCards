@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --port 8789 --inspector-port 9232",
-    "build": "node scripts/build-client.mjs && tailwindcss -i ./src/client/styles.css -o ./public/styles.css --minify && tsx scripts/build-glossary.ts",
+    "build": "node scripts/build-client.mjs && tailwindcss -i ./src/client/styles.css -o ./public/styles.css --minify && tsx scripts/build-glossary.ts && tsx scripts/stamp-asset-hashes.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "playtest": "tsx scripts/playtest.ts",

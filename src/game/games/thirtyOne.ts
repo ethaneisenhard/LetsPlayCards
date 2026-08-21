@@ -49,7 +49,7 @@ function resolveKnock(state: EngineState, gs: ThirtyOneState): EngineState {
   }
 
   const remaining = players.filter((p) => !eliminated.includes(p.id));
-  if (remaining.length === 1) {
+  if (remaining.length <= 1) {
     return {
       game: {
         ...game,
@@ -61,18 +61,19 @@ function resolveKnock(state: EngineState, gs: ThirtyOneState): EngineState {
           phase: 'playing',
           knockedBy: null,
           finalTurnQueue: [],
-          winner: remaining[0].id,
+          winner: remaining[0]?.id ?? null,
         } satisfies ThirtyOneState,
       },
       players,
     };
   }
 
-  // Re-deal for the next round.
+  // Re-deal for the next round. Drop eliminated hands so their card ids
+  // cannot collide with a freshly built deck (same rank-suit-copy ids).
   const deck = shuffleDeck(createDeck());
   let idx = 0;
   const dealt = players.map((p) => {
-    if (eliminated.includes(p.id)) return p;
+    if (eliminated.includes(p.id)) return { ...p, hand: [] };
     const hand = deck.slice(idx, idx + HAND_SIZE);
     idx += HAND_SIZE;
     return { ...p, hand };

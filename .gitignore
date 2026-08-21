@@ -19,7 +19,9 @@ node_modules/
 # Build output
 dist/
 public/client.js
+public/client.*.js
 public/styles.css
+public/styles.*.css
 public/games/
 public/history/index.html
 public/sitemap.xml
