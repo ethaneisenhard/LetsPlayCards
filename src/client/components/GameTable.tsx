@@ -42,7 +42,7 @@ import {
   seatActionLabel,
 } from '../lib/ask-action-pure';
 import { bookCounts, bookScoreLine, lastAskLine, setCountLabel, setScoreHeading } from '../lib/last-ask-pure';
-import { resolveMobileDock } from '../lib/mobile-dock-pure';
+import { resolveMobileDock, resolvePhoneTableLayout } from '../lib/mobile-dock-pure';
 import {
   disabledActionReason,
   resolveTurnStrip,
@@ -366,6 +366,7 @@ export function GameTable({
         resolvedAskTargetId &&
           (!canAct || canAct({ intent: chrome.drawFromIntent!, targetId: resolvedAskTargetId })),
       );
+  const phoneLayout = resolvePhoneTableLayout();
   const dock = resolveMobileDock({
     askRankIntent: chrome.askRankIntent,
     drawFromIntent: chrome.drawFromIntent,
@@ -675,9 +676,9 @@ export function GameTable({
 
   return (
     <div className="relative flex flex-col w-full h-full min-h-0 select-none" style={{ background: theme.pageBg }}>
-      <div className="relative z-30 flex items-center justify-between px-3 sm:px-6 py-2 border-b border-white/10 shrink-0 min-h-11">
+      <div className="relative z-30 flex items-center justify-between px-2 sm:px-6 py-1 sm:py-2 border-b border-white/10 shrink-0 min-h-9 sm:min-h-11">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <a href="/" className="text-white/80 hover:text-white text-xs font-semibold min-h-11 inline-flex items-center">
+          <a href="/" className="text-white/80 hover:text-white text-xs font-semibold min-h-9 sm:min-h-11 inline-flex items-center">
             Change game
           </a>
           {showInvite && (
@@ -691,7 +692,7 @@ export function GameTable({
         </h1>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-1 justify-end">
           {showInvite && (
-            <button onClick={copyInviteLink} className="text-white/80 hover:text-white text-xs font-semibold min-h-11 px-1">
+            <button onClick={copyInviteLink} className="text-white/80 hover:text-white text-xs font-semibold min-h-9 sm:min-h-11 px-1">
               {copied ? 'Copied' : 'Invite'}
             </button>
           )}
@@ -706,7 +707,7 @@ export function GameTable({
               type="button"
               onClick={() => setRulesOpen((v) => !v)}
               aria-expanded={rulesOpen}
-              className={`min-h-11 px-2 text-sm font-semibold ${rulesOpen ? 'text-amber-200' : 'text-white hover:text-amber-200'}`}
+              className={`min-h-9 sm:min-h-11 px-2 text-sm font-semibold ${rulesOpen ? 'text-amber-200' : 'text-white hover:text-amber-200'}`}
             >
               Rules
             </button>
@@ -716,6 +717,7 @@ export function GameTable({
       </div>
 
       <TurnStrip
+        compact
         line={
           isMyTurn && hasDrawLimit && !dealing && !busy
             ? `${strip.line} · ${drawsLeft > 0 ? `${drawsLeft} take${drawsLeft !== 1 ? 's' : ''} left` : 'no takes left'}`
@@ -728,7 +730,7 @@ export function GameTable({
       {/* ── MOBILE LAYOUT ── */}
       <div className="flex-1 flex flex-col overflow-hidden sm:hidden min-h-0 w-full">
         {opponents.length > 0 && (
-        <div className="flex items-center justify-center gap-4 px-4 py-3 border-b border-white/5 shrink-0">
+        <div className={phoneLayout.opponentRowClass}>
           {opponents.slice(0, 4).map((opp) => (
             <StockPile
               key={opp.id}
@@ -736,6 +738,7 @@ export function GameTable({
               count={shownCount(opp.id, opp.handCount)}
               name={opp.name}
               small
+              compact
               isTurn={oppTurnId === opp.id}
               ariaLabel={seatAriaLabel({
                 name: opp.name,
@@ -762,7 +765,7 @@ export function GameTable({
         </div>
         )}
 
-        <div className={`flex-1 flex items-center justify-center gap-6 px-4 py-6 min-h-0 w-full ${chrome.showTableau ? 'overflow-auto items-start' : 'overflow-hidden'}`} style={{ background: theme.mobileFelt }}>
+        <div className={`flex items-center justify-center gap-3 px-3 py-2 w-full ${phoneLayout.feltClass} ${chrome.showTableau ? 'overflow-auto items-start' : 'overflow-hidden'}`} style={{ background: theme.mobileFelt }}>
           {(chrome.showSharedPiles || dealing) && (
           <div className="flex flex-col items-center gap-1 w-12 shrink-0">
             <button
@@ -920,7 +923,7 @@ export function GameTable({
           )}
         </div>
 
-        <div className="border-t border-white/5 shrink-0 max-h-[58%] overflow-y-auto pb-[env(safe-area-inset-bottom)]" style={{ background: theme.handBg }}>
+        <div className={`border-t border-white/5 ${phoneLayout.dockClass}`} style={{ background: theme.handBg }}>
           {stock ? (
             <FaceDownStock
               playerId={player.id}
@@ -946,7 +949,7 @@ export function GameTable({
             </div>
           )}
           {dock.underHand && (askPanelOpen || (chrome.turnButtons.length > 0 && isMyTurn && !busy)) && (
-            <div className="flex flex-col items-center gap-2 px-3 pt-1 pb-3">
+            <div className={phoneLayout.askDockClass}>
               {askControls(true)}
               {turnButtonRow(true)}
             </div>

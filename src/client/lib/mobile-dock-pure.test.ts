@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { mobileTurnLine, resolveMobileDock } from './mobile-dock-pure';
+import {
+  PHONE_DOCK_MAX_PCT,
+  PHONE_FELT_MIN_PCT,
+  feltSurvivesDock,
+  mobileTurnLine,
+  resolveMobileDock,
+  resolvePhoneTableLayout,
+} from './mobile-dock-pure';
 
 describe('resolveMobileDock', () => {
   it('puts Ask, Draw, and turn buttons under the hand', () => {
@@ -33,6 +40,42 @@ describe('resolveMobileDock', () => {
       quietHandHints: false,
       hideSeatActionHint: false,
     });
+  });
+});
+
+describe('resolvePhoneTableLayout', () => {
+  it('caps the dock so the felt keeps a usable share', () => {
+    const layout = resolvePhoneTableLayout();
+    expect(layout.feltMinPct).toBe(PHONE_FELT_MIN_PCT);
+    expect(layout.dockMaxPct).toBe(PHONE_DOCK_MAX_PCT);
+    expect(layout.feltMinPct).toBe(28);
+    expect(layout.dockMaxPct).toBe(42);
+    expect(layout.feltClass).toContain('flex-1');
+    expect(layout.feltClass).toContain('min-h-[28%]');
+    expect(layout.dockClass).toContain('max-h-[42%]');
+    expect(layout.dockClass).toContain('safe-area-inset-bottom');
+    expect(layout.askDockClass).toMatch(/gap-1/);
+  });
+
+  it('leaves felt on a 390-wide Go Fish column after the cap', () => {
+    const columnPx = 700;
+    const compactOpponent = 72;
+    const typicalAskDock = 300;
+    expect(
+      feltSurvivesDock({
+        columnPx,
+        opponentPx: compactOpponent,
+        uncappedDockPx: typicalAskDock,
+      }),
+    ).toBe(true);
+    expect(
+      feltSurvivesDock({
+        columnPx,
+        opponentPx: 110,
+        uncappedDockPx: 410,
+        dockMaxPct: 58,
+      }),
+    ).toBe(false);
   });
 });
 

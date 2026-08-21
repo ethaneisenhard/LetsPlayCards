@@ -37,10 +37,10 @@ function OrderBar({
   onSuit: () => void;
 }) {
   const btn = compact
-    ? 'min-h-11 px-4 rounded-lg bg-white/10 text-white/85 text-sm font-semibold disabled:opacity-30'
+    ? 'min-h-11 min-w-11 px-3 rounded-lg bg-white/10 text-white/85 text-sm font-semibold disabled:opacity-30'
     : 'px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-semibold disabled:opacity-30';
   return (
-    <div className={`flex items-center justify-center gap-2 ${compact ? 'px-3 pb-2' : ''}`}>
+    <div className="flex items-center justify-center gap-1 shrink-0">
       <button type="button" className={btn} onClick={onSuit}>
         Suit
       </button>
@@ -199,25 +199,27 @@ export function CardHand({
   const arrangeHint = 'Drag a card to move it · Suit groups shapes · Pairs groups the same number';
 
   if (mobile) {
+    const readout = ordered.length > 0 ? `${handCountLine(ordered.length)}: ${handReadout(ordered)}` : handCountLine(0);
     return (
       <div className="flex flex-col" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
-        <div className="flex items-center justify-between px-3 pt-2 pb-1">
-          <span className="text-white text-sm font-semibold">
-            {youSeatLine(playerName, isMyTurn)}
-          </span>
+        <div className="flex items-center gap-2 px-2 pt-1 pb-0.5">
+          <div className="min-w-0 flex-1">
+            <span className="text-white text-xs font-semibold truncate block">
+              {youSeatLine(playerName, isMyTurn)}
+            </span>
+            <p className="text-white/80 text-[11px] leading-tight truncate" aria-live="polite" title={readout}>
+              {readout}
+            </p>
+          </div>
+          {orderBar}
           {selectedCard && (
-            <button onClick={() => setSelectedCard(null)} className="min-h-11 px-3 text-white/80 text-sm">
+            <button onClick={() => setSelectedCard(null)} className="min-h-11 px-3 text-white/80 text-sm shrink-0">
               ✕ Cancel
             </button>
           )}
         </div>
-        <p className="px-3 pb-1 text-white/85 text-xs leading-snug" aria-live="polite">
-          {handCountLine(ordered.length)}
-          {ordered.length > 0 ? `: ${handReadout(ordered)}` : ''}
-        </p>
 
         {fan}
-        {orderBar}
 
         {selectedCard && canAct && (onPlay || onDiscard) && (
           <div className="flex gap-2 px-3 pb-3 animate-fade-in">

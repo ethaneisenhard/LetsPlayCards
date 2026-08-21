@@ -13,6 +13,7 @@ export function StockPile({
   actionLabel,
   isTurn,
   ariaLabel,
+  compact,
 }: {
   count: number;
   playerId: string;
@@ -23,6 +24,7 @@ export function StockPile({
   actionLabel?: string;
   isTurn?: boolean;
   ariaLabel?: string;
+  compact?: boolean;
 }) {
   const box = small ? 'w-10 h-14' : 'w-[70px] h-[100px]';
   const pile = (
@@ -65,12 +67,17 @@ export function StockPile({
 
   return (
     <div
-      className="flex flex-col items-center gap-2.5"
+      className={`flex flex-col items-center ${compact ? 'gap-1' : 'gap-2.5'}`}
       role="group"
       aria-label={ariaLabel ?? (name ? `${name}, ${count} cards` : undefined)}
       aria-current={isTurn ? 'true' : undefined}
     >
-      {name && (
+      {name && compact && (
+        <span className={`text-xs font-semibold truncate max-w-[7rem] ${isTurn ? 'text-amber-200' : 'text-white'}`}>
+          {isTurn ? `${name} · their turn` : name}
+        </span>
+      )}
+      {name && !compact && (
         <div className="flex flex-col items-center">
           <span className="text-white text-sm font-semibold truncate max-w-[6rem]">{name}</span>
           <span className={`text-[11px] font-semibold ${isTurn ? 'text-amber-200' : 'text-white/70'}`}>

@@ -32,6 +32,46 @@ export function resolveMobileDock(input: {
   };
 }
 
+/** Phone column: felt keeps a floor; the hand dock cannot claim most of the screen. */
+export const PHONE_FELT_MIN_PCT = 28;
+export const PHONE_DOCK_MAX_PCT = 42;
+
+export type PhoneTableLayout = {
+  feltMinPct: number;
+  dockMaxPct: number;
+  feltClass: string;
+  dockClass: string;
+  opponentRowClass: string;
+  askDockClass: string;
+};
+
+export function resolvePhoneTableLayout(): PhoneTableLayout {
+  return {
+    feltMinPct: PHONE_FELT_MIN_PCT,
+    dockMaxPct: PHONE_DOCK_MAX_PCT,
+    feltClass: 'flex-1 min-h-[28%]',
+    dockClass: 'shrink-0 max-h-[42%] overflow-y-auto pb-[env(safe-area-inset-bottom)]',
+    opponentRowClass:
+      'flex items-center justify-center gap-3 px-3 py-1.5 border-b border-white/5 shrink-0',
+    askDockClass: 'flex flex-col items-center gap-1 px-2 pt-1 pb-2',
+  };
+}
+
+/** After the dock is capped, does the leftover felt still meet the floor? */
+export function feltSurvivesDock(input: {
+  columnPx: number;
+  opponentPx: number;
+  uncappedDockPx: number;
+  feltMinPct?: number;
+  dockMaxPct?: number;
+}): boolean {
+  const feltMinPct = input.feltMinPct ?? PHONE_FELT_MIN_PCT;
+  const dockMaxPct = input.dockMaxPct ?? PHONE_DOCK_MAX_PCT;
+  const dock = Math.min(input.uncappedDockPx, input.columnPx * (dockMaxPct / 100));
+  const felt = input.columnPx - input.opponentPx - dock;
+  return felt >= input.columnPx * (feltMinPct / 100);
+}
+
 export function mobileTurnLine(input: {
   busy: boolean;
   busyHint?: string;
