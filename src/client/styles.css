@@ -56,6 +56,7 @@
   .animate-card-in-opp { animation: card-in-opp 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
   .animate-card-out-self { animation: card-out-self 0.5s cubic-bezier(0.4, 0, 1, 1) forwards; }
   .animate-card-out-opp { animation: card-out-opp 0.5s cubic-bezier(0.4, 0, 1, 1) forwards; }
+  .animate-card-win-shake { animation: card-win-shake 0.42s ease-in-out 2; }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { scrollbar-width: none; }
@@ -92,4 +93,11 @@
 
 @keyframes card-out-opp {
   to { opacity: 0; transform: translateY(-96px) scale(0.45); }
+}
+
+@keyframes card-win-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-4px) rotate(-2.5deg); }
+  50% { transform: translateX(4px) rotate(2.5deg); }
+  75% { transform: translateX(-3px) rotate(-1.5deg); }
 }

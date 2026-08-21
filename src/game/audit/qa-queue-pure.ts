@@ -40,6 +40,7 @@ export const VISUAL_CHECKS: Record<TableKind, readonly string[]> = {
   'stock-battle': [
     'Both piles show stack counts',
     'Flip: card leaves pile, sits in lane, no flicker / layout jump',
+    'Reveal: winner card shakes, then both fly to the winner pile',
     'Collect: cards fly to winner pile (or pot if no winner yet)',
     'Bot replies after the human, then collect',
     'Same table on /playground/:type and /solo/:type',

@@ -7,11 +7,14 @@ export function BattleLane({
   slots,
   players,
   hiddenCardIds,
+  winnerId,
   small,
 }: {
   slots: BattleSlot[];
   players: PlayerView[];
   hiddenCardIds?: ReadonlySet<string>;
+  /** Winning lane shakes before cards fly home. */
+  winnerId?: string | null;
   small?: boolean;
 }) {
   return (
@@ -22,11 +25,12 @@ export function BattleLane({
       {slots.map((slot) => {
         const top = slot.cards[slot.cards.length - 1];
         const hide = !top || hiddenCardIds?.has(top.id);
+        const won = Boolean(winnerId && slot.playerId === winnerId && top && !hide);
         return (
           <div key={slot.playerId} className={`flex flex-col items-center gap-1 ${small ? 'w-10' : 'w-[70px]'}`}>
             <div
               data-card-anchor={laneAnchor(slot.playerId)}
-              className={`relative ${small ? 'w-10 h-14' : 'w-[70px] h-[100px]'}`}
+              className={`relative ${small ? 'w-10 h-14' : 'w-[70px] h-[100px]'} ${won ? 'animate-card-win-shake' : ''}`}
             >
               {!hide && <PlayingCard card={top} small={small} />}
             </div>

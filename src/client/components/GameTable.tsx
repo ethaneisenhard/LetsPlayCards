@@ -30,6 +30,7 @@ import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { suitLaddersFromPlayed } from '../lib/suit-ladder-pure';
 import { resolveTableChrome } from '../lib/table-chrome-pure';
 import { resolveSurface } from '../lib/table-theme';
+import { shouldAutoWarCollect, WAR_REVEAL_HOLD_MS } from '../lib/war-reveal-pure';
 
 const DUMMY_CARD = { id: 'back', suit: 'spades' as const, rank: 'A' as const };
 
@@ -335,6 +336,26 @@ export function GameTable({
     return () => clearTimeout(t);
   }, [gs.roundWinnerId, cardsOnLane, busy]);
 
+  // Multiplayer War: winner settles after a hold so both cards can sit, shake, then fly home.
+  // Solo matches already settle via the bot loop (`canAct` is set).
+  useEffect(() => {
+    if (
+      !shouldAutoWarCollect({
+        phase: gs.phase,
+        roundWinnerId: gs.roundWinnerId,
+        playerId: player.id,
+        hasLocalSettle: Boolean(canAct),
+      })
+    ) {
+      return;
+    }
+    if (busy) return;
+    const t = setTimeout(() => {
+      send({ intent: 'war-collect' });
+    }, WAR_REVEAL_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [gs.phase, gs.roundWinnerId, player.id, busy, canAct, send]);
+
   const snapStamp = battleSlots.map((s) => `${s.playerId}:${s.cards.map((c) => c.id).join(',')}`).join('|');
   const prevSnap = useRef(snap);
   const prevType = useRef(game.gameType);
@@ -360,6 +381,10 @@ export function GameTable({
     setFlights((cur) => cur.filter((f) => f.key !== key));
   }, []);
   const hiddenCardIds = new Set(flights.map((f) => f.card.id));
+  const revealWinnerId = gs.phase === 'reveal' ? (gs.roundWinnerId ?? null) : null;
+  const winnerName = revealWinnerId
+    ? (players.find((p) => p.id === revealWinnerId)?.name ?? 'Winner')
+    : null;
 
   const stock = chrome.handReveal === 'stock';
 
@@ -401,7 +426,11 @@ export function GameTable({
         <span className={busy ? 'text-gold/80 font-semibold' : isMyTurn ? 'text-emerald-400 font-semibold' : 'text-white/40'}>
           {busy
             ? (busyHint ?? 'Opponent is playing…')
-            : isMyTurn
+            : revealWinnerId
+              ? revealWinnerId === player.id
+                ? '● You won — cards coming home…'
+                : `● ${winnerName} won — collecting…`
+              : isMyTurn
               ? chrome.drawFromIntent
                 ? '● Your turn · click a player to draw'
                 : chrome.askRankIntent
@@ -469,6 +498,7 @@ export function GameTable({
               slots={battleSlots}
               players={players}
               hiddenCardIds={hiddenCardIds}
+              winnerId={revealWinnerId}
               small
             />
           )}
@@ -697,6 +727,7 @@ export function GameTable({
               slots={battleSlots}
               players={players}
               hiddenCardIds={hiddenCardIds}
+              winnerId={revealWinnerId}
             />
           )}
           {showCenterPile && (
