@@ -1,0 +1,170 @@
+name: Preview
+
+# Per-PR Workers (Durable Objects block Cloudflare's built-in preview URLs).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      url: ${{ steps.meta.outputs.url }}
+      worker: ${{ steps.meta.outputs.worker }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      - name: Preview worker name + URL
+        id: meta
+        run: pnpm exec tsx scripts/preview-meta.ts --pr "${{ github.event.pull_request.number }}" --branch "${{ github.head_ref || github.ref_name }}"
+
+      - name: Ensure shared preview D1
+        id: d1
+        run: |
+          ID=$(pnpm exec tsx scripts/ensure-preview-d1.ts)
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+          echo "Preview D1: $ID"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Write preview wrangler config
+        run: |
+          pnpm exec tsx scripts/write-preview-config.ts \
+            --name "${{ steps.meta.outputs.worker }}" \
+            --d1 "${{ steps.d1.outputs.id }}" \
+            --out .scratch/wrangler.preview.json
+
+      - name: Apply preview D1 migrations
+        run: pnpm exec wrangler d1 migrations apply letsplaycards-preview --remote -c .scratch/wrangler.preview.json
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy preview Worker
+        run: pnpm exec wrangler deploy -c .scratch/wrangler.preview.json
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Comment preview URL on PR
+        if: github.event.pull_request.number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.meta.outputs.url }}';
+            const worker = '${{ steps.meta.outputs.worker }}';
+            const marker = '<!-- lpc-preview-url -->';
+            const body = [
+              marker,
+              '### Preview',
+              '',
+              `**${url}**`,
+              '',
+              `Worker \`${worker}\` · shared preview D1 (not production).`,
+              '',
+              '_Updated with each push to this PR._',
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.user?.type === 'Bot' && c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve preview Worker
+        id: meta
+        run: pnpm exec tsx scripts/preview-meta.ts --pr "${{ github.event.pull_request.number }}"
+
+      - name: Delete preview Worker
+        continue-on-error: true
+        run: pnpm exec wrangler delete "${{ steps.meta.outputs.worker }}" --force
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Comment cleanup on PR
+        if: github.event.pull_request.number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const worker = '${{ steps.meta.outputs.worker }}';
+            const marker = '<!-- lpc-preview-url -->';
+            const body = [
+              marker,
+              '### Preview',
+              '',
+              `Preview Worker \`${worker}\` deleted (PR closed).`,
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.user?.type === 'Bot' && c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            }

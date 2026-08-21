@@ -52,6 +52,20 @@ Live: https://letsplaycards.devbyethan.workers.dev
 
 Push to `main` deploys via GitHub Actions (`.github/workflows/deploy.yml`).
 
+### Preview URLs (pull requests)
+
+Cloudflare’s built-in Workers preview URLs **do not work** with Durable Objects.
+Instead, each PR deploys an isolated Worker:
+
+| | |
+|---|---|
+| Workflow | `.github/workflows/preview.yml` |
+| URL | `https://letsplaycards-pr-<N>.devbyethan.workers.dev` |
+| D1 | Shared `letsplaycards-preview` (created on first run; not production) |
+| Cleanup | Worker deleted when the PR closes |
+
+A sticky comment on the PR always has the latest link. Same secrets as production.
+
 Required repo secrets:
 
 | Secret | Value |
