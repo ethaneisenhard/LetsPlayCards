@@ -125,4 +125,18 @@ describe('thirty-one', () => {
     expect(gs.winner).toBe('p1');
     expect(s.game.status).toBe('finished');
   });
+
+  it('finishes when a knock takes the last life from every remaining player', () => {
+    let s = tState(
+      [[c('5', 'hearts'), c('6', 'diamonds'), c('3', 'clubs')], [c('5', 'spades'), c('6', 'clubs'), c('3', 'diamonds')]],
+      { lives: { p1: 1, p2: 1 } },
+      [c('2', 'hearts'), c('4', 'clubs')],
+    );
+    s = thirtyOneGame.reduce(s, { intent: 'knock', playerId: 'p1' });
+    s = thirtyOneGame.reduce(s, { intent: 'swap', playerId: 'p2', cardId: '5s', from: 'stock' });
+    const gs = s.game.gameState as ThirtyOneState;
+    expect(s.game.status).toBe('finished');
+    expect(gs.eliminated).toEqual(expect.arrayContaining(['p1', 'p2']));
+    expect(s.game.deck).toHaveLength(1);
+  });
 });

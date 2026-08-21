@@ -45,6 +45,8 @@ jobs:
           test -f scripts/preview-meta.ts
           test -f scripts/write-preview-config.ts
           test -f scripts/assert-preview-live.ts
+          test -f scripts/assert-preview-bundle.ts
+          test -f scripts/stamp-asset-hashes.ts
           test -f src/ci/preview-pure.ts
           git log -1 --oneline
 
@@ -104,6 +106,9 @@ jobs:
 
       - name: Probe preview URL
         run: pnpm exec tsx scripts/assert-preview-live.ts --url "${{ steps.meta.outputs.url }}/"
+
+      - name: Probe hashed client bundle
+        run: pnpm exec tsx scripts/assert-preview-bundle.ts --origin "${{ steps.meta.outputs.url }}"
 
       - name: Comment preview URL on PR
         if: env.PR_NUMBER
