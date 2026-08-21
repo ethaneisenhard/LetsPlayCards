@@ -66,8 +66,8 @@ describe('renderGameTileGrid', () => {
     expect(html).toContain('class="game-tiles"');
     expect(html).toContain('href="/solo/war"');
     expect(html).toContain('href="/solo/go_fish"');
-    expect(html).toContain('Battle card by card');
-    expect(html).toContain('Ask, collect, dominate');
+    expect(html).toContain(GAME_CATALOG.find((e) => e.type === 'war')!.config.tagline);
+    expect(html).toContain(GAME_CATALOG.find((e) => e.type === 'go_fish')!.config.tagline);
   });
 });
 
