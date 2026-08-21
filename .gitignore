@@ -21,6 +21,7 @@ dist/
 public/client.js
 public/styles.css
 public/games/
+public/history/
 public/sitemap.xml
 public/robots.txt
 
