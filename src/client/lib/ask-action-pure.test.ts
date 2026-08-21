@@ -54,7 +54,7 @@ describe('resolveAskTargetId', () => {
 
 describe('ask copy', () => {
   it('names the rank and who', () => {
-    expect(askButtonLabel(null, 'Alice', true)).toBe('Pick a rank you hold');
+    expect(askButtonLabel(null, 'Alice', true)).toBe('Ask');
     expect(askButtonLabel('7', 'Alice', true)).toBe('Ask anyone for 7s');
     expect(askButtonLabel('7', 'Alice', false)).toBe('Ask Alice for 7s');
     expect(askTurnHint(null)).toBe('● Your turn · ask for a rank you hold');

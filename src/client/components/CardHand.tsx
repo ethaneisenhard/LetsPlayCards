@@ -14,6 +14,9 @@ interface CardHandProps {
   playerName: string;
   isMyTurn?: boolean;
   mobile?: boolean;
+  /** Hide arrange / pick hints when actions sit under the fan. */
+  quiet?: boolean;
+  hideOrder?: boolean;
 }
 
 function OrderBar({
@@ -61,6 +64,8 @@ export function CardHand({
   playerName,
   isMyTurn = true,
   mobile = false,
+  quiet = false,
+  hideOrder = false,
 }: CardHandProps) {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [ordered, setOrdered] = useState<Card[]>(() => [...cards]);
@@ -166,7 +171,7 @@ export function CardHand({
         </div>
 
         {fan}
-        {ordered.length > 1 && orderBar}
+        {ordered.length > 1 && !hideOrder && orderBar}
 
         {selectedCard && canAct && (onPlay || onDiscard) && (
           <div className="flex gap-2 px-3 pb-3 animate-fade-in">
@@ -188,12 +193,12 @@ export function CardHand({
             )}
           </div>
         )}
-        {!selectedCard && !pickedCardId && ordered.length > 0 && (
+        {!quiet && !selectedCard && !pickedCardId && ordered.length > 0 && (
           <p className="text-white/20 text-[10px] text-center pb-3">
             {pickHint ?? 'Tap a card · Rank / Suit / ← → to arrange'}
           </p>
         )}
-        {onPick && pickedCardId && pickHint && (
+        {!quiet && onPick && pickedCardId && pickHint && (
           <p className="text-gold/50 text-[10px] text-center pb-3">{pickHint}</p>
         )}
       </div>

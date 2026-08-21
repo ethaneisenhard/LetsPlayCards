@@ -1,9 +1,11 @@
 import { ANYONE_TARGET_ID } from '../lib/ask-action-pure';
 
 const chip =
-  'px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
-const chipIdle = `${chip} bg-white/10 hover:bg-white/20 text-white`;
-const chipOn = `${chip} bg-gold text-slate-900`;
+  'rounded-lg font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
+const chipDesk = `${chip} px-3 py-1.5 text-sm`;
+const chipPhone = `${chip} min-h-11 min-w-11 px-4 text-base`;
+const chipIdle = 'bg-white/10 hover:bg-white/20 text-white';
+const chipOn = 'bg-gold text-slate-900';
 
 export function AskActionPanel({
   title,
@@ -20,6 +22,7 @@ export function AskActionPanel({
   submitLabel,
   submitDisabled,
   onSubmit,
+  phone,
 }: {
   title: string;
   hint?: string;
@@ -35,15 +38,17 @@ export function AskActionPanel({
   submitLabel: string;
   submitDisabled?: boolean;
   onSubmit: () => void;
+  phone?: boolean;
 }) {
   const whoSelected = selectedTargetId ?? (includeAnyone ? ANYONE_TARGET_ID : null);
+  const chipSize = phone ? chipPhone : chipDesk;
   return (
-    <div className="flex flex-col items-center gap-2.5 w-full max-w-sm px-2">
-      <p className="text-gold/80 text-xs tracking-widest uppercase font-semibold">{title}</p>
-      {hint && <p className="text-white/55 text-xs text-center leading-snug">{hint}</p>}
+    <div className={`flex flex-col items-center w-full ${phone ? 'gap-2 max-w-none px-1' : 'gap-2.5 max-w-sm px-2'}`}>
+      {!phone && <p className="text-gold/80 text-xs tracking-widest uppercase font-semibold">{title}</p>}
+      {hint && !phone && <p className="text-white/55 text-xs text-center leading-snug">{hint}</p>}
       {ranks && ranks.length > 0 && onSelectRank && (
         <div className="flex flex-col items-center gap-1.5 w-full">
-          <span className="text-white/40 text-[10px] uppercase tracking-widest">Rank you hold</span>
+          <span className="text-white/40 text-[10px] uppercase tracking-widest">Rank</span>
           <div className="flex flex-wrap justify-center gap-1.5">
             {ranks.map((rank) => (
               <button
@@ -52,7 +57,7 @@ export function AskActionPanel({
                 disabled={disabled}
                 aria-pressed={selectedRank === rank}
                 onClick={() => onSelectRank(rank)}
-                className={selectedRank === rank ? chipOn : chipIdle}
+                className={`${chipSize} ${selectedRank === rank ? chipOn : chipIdle}`}
               >
                 {rank}
               </button>
@@ -70,9 +75,9 @@ export function AskActionPanel({
                 disabled={disabled}
                 aria-pressed={whoSelected === ANYONE_TARGET_ID}
                 onClick={() => onSelectTarget(ANYONE_TARGET_ID)}
-                className={whoSelected === ANYONE_TARGET_ID ? chipOn : chipIdle}
+                className={`${chipSize} ${whoSelected === ANYONE_TARGET_ID ? chipOn : chipIdle}`}
               >
-                Anyone{anyoneName ? ` · ${anyoneName}` : ''}
+                Anyone{!phone && anyoneName ? ` · ${anyoneName}` : ''}
               </button>
             )}
             {targets.map((t) => (
@@ -82,7 +87,7 @@ export function AskActionPanel({
                 disabled={disabled}
                 aria-pressed={whoSelected === t.id}
                 onClick={() => onSelectTarget(t.id)}
-                className={whoSelected === t.id ? chipOn : chipIdle}
+                className={`${chipSize} ${whoSelected === t.id ? chipOn : chipIdle}`}
               >
                 {t.name}
               </button>
@@ -94,7 +99,9 @@ export function AskActionPanel({
         type="button"
         disabled={disabled || submitDisabled}
         onClick={onSubmit}
-        className="w-full max-w-xs px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:bg-white/10 disabled:text-white/35 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg"
+        className={`w-full rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:bg-white/10 disabled:text-white/35 disabled:cursor-not-allowed text-white font-bold shadow-lg ${
+          phone ? 'max-w-none min-h-12 px-4 py-3 text-base' : 'max-w-xs px-4 py-2.5 text-sm'
+        }`}
       >
         {submitLabel}
       </button>

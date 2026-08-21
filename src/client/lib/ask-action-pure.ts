@@ -38,7 +38,7 @@ export function askButtonLabel(
   targetName: string | null,
   anyone: boolean,
 ): string {
-  if (!rank) return 'Pick a rank you hold';
+  if (!rank) return 'Ask';
   if (!targetName) return `Ask someone for ${rank}s`;
   if (anyone) return `Ask anyone for ${rank}s`;
   return `Ask ${targetName} for ${rank}s`;
