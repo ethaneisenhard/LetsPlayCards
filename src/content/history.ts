@@ -76,9 +76,9 @@ export const HISTORY_PAGE = {
         'Games where two people flip a card and the higher one wins are easy to teach. War is the version most children learn in English. An older English cousin, Beggar-My-Neighbor, uses picture cards as a kind of tax. Both are luck, not planning.',
         'Go Fish and Old Maid are family games from the 1800s: ask someone for a rank you already hold, or pair cards and try not to get stuck. Old Maid’s rules show up in an American book for girls in 1831. Go Fish grew from the same “please give me that card” family as games like Authors; the name became common in the United States by the early 1900s. Snap and Slapjack are the noisy cousins — shout or slap when two cards match.',
         'Rummy — making a group of the same number, or a run of the same family — most likely grew from a Mexican game called Conquian in the 1800s. Some writers also see an older Asian link. The name “rummy” shows up in the United States around 1900. Gin Rummy, the two-player version, is usually credited to Elwood T. Baker in 1909.',
-        'Poker took shape in New Orleans in the early 1800s, after the Louisiana Purchase. It likely grew from the French game poque (and the older German pochen), with extra ideas from other bluffing games. An English visitor, Joseph Cowell, saw it played there in 1829 with a short pack. The full 52-card version and draw poker followed as the game rode the Mississippi. Texas Hold’em — two private cards plus five shared cards — is a later Texas form that became the world game in the late 1900s.',
+        'Poker took shape in New Orleans in the early 1800s, after the Louisiana Purchase. It likely grew from the French game poque (and the older German pochen), with extra ideas from other bluffing games. An English visitor, Joseph Cowell, saw it played there in 1829 with a short 20-card pack. The full 52-card version, and the version where you can swap cards, followed as the game rode the Mississippi. Texas Hold’em — two private cards plus five shared cards — is a later Texas form that became the world game in the late 1900s.',
         'Games you play alone (often called solitaire, or patience in Britain) show up in Europe by the late 1700s and fill whole books by the mid-1800s. Klondike — the seven-pile layout many people just call “Solitaire” — took its name from the Klondike gold rush of the 1890s. FreeCell and Spider are later cousins.',
-        'A large family of games asks everyone to play one card, then the highest card of the led family (or a special winning family) takes the pile. Whist was the English parlor favorite in the 1700s. Hearts, Spades, Euchre, and Bridge all grew from that idea. Hearts asks you to avoid certain cards. Spades lets one family always win. Bridge added an auction to decide the goal.',
+        'A large family of games asks everyone to play one card, then the highest card of the family that was played first (or a special winning family) takes the pile. Whist was the English parlor favorite in the 1700s. Hearts, Spades, Euchre, and Bridge all grew from that idea. Hearts asks you to avoid certain cards. Spades lets one family always win. Bridge added an auction to decide the goal.',
         'Crazy Eights is a 20th-century matching game: play a card that matches the number or the family, and eights let you change the family. It is the folk parent of Uno. President is a “climb the ranks” version popular with groups. Blackjack comes from the older French game vingt-et-un (“twenty-one”); American gambling halls gave it the blackjack name in the early 1900s. Cribbage is a special case: an English game from the 1600s, usually credited to the poet Sir John Suckling, that scores combinations while you peg points on a board.',
         'You can play the live versions of these games here — same 52-card pack, no download, no account.',
       ],
@@ -127,7 +127,7 @@ export const HISTORY_PAGE = {
  * actually discusses. Keys are glossary slugs.
  */
 export const GAME_ORIGINS: Record<string, string> = {
-  war: 'War is the simple “higher card wins” game most English-speaking children learn. Games like it are easy to invent once you have a ranked pack; this site’s version is the familiar two-player flip.',
+  war: 'War is the simple “higher card wins” game most English-speaking children learn. Games like it are easy to invent once cards have high and low values; this site’s version is the familiar two-player flip.',
   beggar_my_neighbor:
     'Beggar-My-Neighbor is an older English cousin of War. Picture cards make the other player “pay” extra cards. There is no planning — only the order of the pack.',
   go_fish:
@@ -140,7 +140,7 @@ export const GAME_ORIGINS: Record<string, string> = {
   rummy:
     'Rummy most likely grew from the Mexican game Conquian in the 1800s. Some writers also see an older Asian link. The name shows up in the United States around 1900.',
   gin_rummy:
-    'Gin Rummy is the two-player rummy that is usually credited to Elwood T. Baker in 1909. Same idea — groups and runs — with a knock when your leftover cards are low.',
+    'Gin Rummy is the two-player rummy that is usually credited to Elwood T. Baker in 1909. Same idea — groups and runs — and you can end the hand when your leftover cards are low.',
   rummy_500:
     'Rummy 500 is a later point-scoring cousin of rummy. You can take cards from the discard pile, and the race is to 500 points.',
   texas_holdem:
@@ -156,7 +156,7 @@ export const GAME_ORIGINS: Record<string, string> = {
   spider:
     'Spider Solitaire is a two-pack, ten-column cousin of the older patience games. Clear complete runs to empty the table.',
   hearts:
-    'Hearts belongs to the family of games where everyone plays one card and the highest card of that family takes the pile — except here you try not to take hearts. It grew from older “avoid these cards” games in Europe.',
+    'Hearts belongs to the family of games where everyone plays one card and the highest card of the family that was played first takes the pile — except here you try not to take hearts. It grew from older “avoid these cards” games in Europe.',
   whist:
     'Whist was the English parlor favorite in the 1700s: partners, one winning family per hand, no auction. Bridge grew out of it later.',
   bridge:
