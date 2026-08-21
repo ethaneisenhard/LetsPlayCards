@@ -34,7 +34,7 @@ export function BattleLane({
             >
               {!hide && <PlayingCard card={top} small={small} />}
             </div>
-            <span className="h-4 w-full truncate text-center text-white/40 text-[9px] sm:text-xs">
+            <span className="w-full text-center text-white/40 text-[9px] sm:text-xs break-words">
               {players.find((p) => p.id === slot.playerId)?.name ?? '—'}
             </span>
           </div>

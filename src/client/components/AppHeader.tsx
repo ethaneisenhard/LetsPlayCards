@@ -30,7 +30,7 @@ export function AppHeader() {
             <span className="text-red-500">♦</span>
             <span className="text-[color:var(--text)]">♣</span>
           </span>
-          <span className="font-display font-bold text-[color:var(--text)] text-sm sm:text-base truncate tracking-tight hidden sm:inline">
+          <span className="font-display font-bold text-[color:var(--text)] text-sm sm:text-base tracking-tight hidden sm:inline">
             Let&apos;s Play <span className="text-gold">Cards</span>
           </span>
         </a>
@@ -46,7 +46,7 @@ export function AppHeader() {
             className="flex items-center gap-2 rounded-full hover:opacity-90 transition-opacity"
           >
             <ProfileAvatar emoji={avatar} />
-            <span className="hidden sm:inline text-[color:var(--text)] text-sm font-semibold max-w-[8rem] truncate">
+            <span className="hidden sm:inline text-[color:var(--text)] text-sm font-semibold break-words">
               {name || 'Guest'}
             </span>
           </button>

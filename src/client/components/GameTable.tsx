@@ -173,7 +173,7 @@ export function GameTable({
     if (!appNav) return;
     setNavTools(
       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-        <span className="font-display font-bold text-[color:var(--text)] text-sm uppercase tracking-wide truncate">
+        <span className="font-display font-bold text-[color:var(--text)] text-sm uppercase tracking-wide break-words">
           {config.name}
         </span>
         {showInvite && (
@@ -887,8 +887,8 @@ export function GameTable({
                   </div>
                 </div>
               ))}
-              {askLine && <p className="text-white/50 text-[10px] text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/50 text-[10px] text-center">{setScoreHeading()} · {scoreLine}</p>}
+              {askLine && <p className="text-white/50 text-[10px] text-center break-words">{askLine}</p>}
+              {scoreLine && <p className="text-gold/50 text-[10px] text-center break-words">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -1145,8 +1145,8 @@ export function GameTable({
                   </div>
                 </div>
               ))}
-              {askLine && <p className="text-white/60 text-sm text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/60 text-xs text-center">{setScoreHeading()} · {scoreLine}</p>}
+              {askLine && <p className="text-white/60 text-sm text-center break-words">{askLine}</p>}
+              {scoreLine && <p className="text-gold/60 text-xs text-center break-words">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -1162,7 +1162,7 @@ export function GameTable({
                       disabled={busy || !isMyTurn || !felt.allowPickup}
                       label={`Pick up ${card.rank} of ${card.suit}`}
                     />
-                    <span className="text-white/30 text-[9px] max-w-[70px] truncate">{card.playedByName}</span>
+                    <span className="text-white/30 text-[9px] text-center break-words">{card.playedByName}</span>
                   </div>
                 ))}
               </div>

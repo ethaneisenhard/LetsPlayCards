@@ -69,7 +69,7 @@ export function PlayerSeat({
         <div className={`w-11 h-11 rounded-full bg-linear-to-br from-emerald-600/60 to-emerald-900/60 border flex items-center justify-center text-white font-bold text-sm ${isTurn ? 'border-amber-300 ring-2 ring-amber-300/70' : selectable ? 'border-gold ring-2 ring-gold/40' : 'border-white/40'}`}>
           {player.name.charAt(0).toUpperCase()}
         </div>
-        <span className="text-white text-sm font-semibold max-w-[88px] truncate">{player.name}</span>
+        <span className="text-white text-sm font-semibold text-center break-words px-1">{player.name}</span>
         <span className={`text-[11px] font-semibold ${isTurn ? 'text-amber-200' : 'text-white/70'}`}>
           {isTurn ? 'Their turn' : 'Waiting'}
         </span>

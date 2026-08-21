@@ -17,11 +17,11 @@ export function FeltTurnHint({
   return (
     <div role="status" aria-live="polite" className="flex items-center justify-center px-3 shrink-0 z-20">
       <div
-        className={`flex items-center justify-center gap-2 max-w-[22rem] px-3 py-1.5 rounded-full ${
+        className={`flex items-center justify-center gap-2 max-w-full px-3 py-1.5 rounded-full ${
           you ? 'bg-black/50 text-white' : 'bg-black/40 text-white/95'
         }`}
       >
-        <p className="text-sm font-semibold text-center leading-tight line-clamp-2">{line}</p>
+        <p className="text-sm font-semibold text-center leading-snug break-words">{line}</p>
         {skipDeal && (
           <button
             type="button"

@@ -185,17 +185,15 @@ export function CardHand({
     const readout = ordered.length > 0 ? `${handCountLine(ordered.length)}: ${handReadout(ordered)}` : handCountLine(0);
     return (
       <div className="flex flex-col" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
-        <div className="flex items-center gap-2 px-2 pt-1 pb-0.5">
-          <div className="min-w-0 flex-1">
-            <span className="text-white text-xs font-semibold truncate block">
-              {youSeatLine(playerName, isMyTurn)}
-            </span>
-            <p className="text-white/80 text-[11px] leading-tight truncate" aria-live="polite" title={readout}>
-              {readout}
-            </p>
-          </div>
+        <div className="flex items-start gap-2 px-2 pt-1 pb-0.5">
+          <span className="min-w-0 flex-1 text-white text-xs font-semibold break-words">
+            {youSeatLine(playerName, isMyTurn)}
+          </span>
           {orderBar}
         </div>
+        <p className="text-white/80 text-[11px] leading-snug px-2 break-words" aria-live="polite">
+          {readout}
+        </p>
 
         {aboveFan}
         {fan}
@@ -209,7 +207,7 @@ export function CardHand({
   return (
     <div className="flex flex-col items-center gap-3" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
       <div className="text-white text-sm font-semibold">{youSeatLine(playerName, isMyTurn)}</div>
-      <p className="text-white/85 text-sm text-center max-w-xl leading-snug px-4" aria-live="polite">
+      <p className="text-white/85 text-sm text-center leading-snug px-4 break-words" aria-live="polite">
         {handCountLine(ordered.length)}
         {ordered.length > 0 ? `: ${handReadout(ordered)}` : ''}
       </p>

@@ -15,4 +15,19 @@ describe('handReadout', () => {
     expect(handCountLine(1)).toBe('1 card');
     expect(handCountLine(10)).toBe('10 cards');
   });
+
+  it('lists every card in a 13-card hand with no ellipsis', () => {
+    const suits = ['hearts', 'diamonds', 'clubs', 'spades'] as const;
+    const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'] as const;
+    const hand = ranks.map((rank, i) => ({
+      id: `${rank}${i}`,
+      suit: rank === 'Q' ? ('hearts' as const) : suits[i % 4],
+      rank,
+    }));
+    const line = `${handCountLine(hand.length)}: ${handReadout(hand)}`;
+    expect(line.startsWith('13 cards:')).toBe(true);
+    expect(line).toContain('Queen of hearts');
+    expect(line).not.toMatch(/…|\.\.\./);
+    expect(handReadout(hand).split(', ')).toHaveLength(13);
+  });
 });

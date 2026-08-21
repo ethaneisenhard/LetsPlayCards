@@ -73,13 +73,13 @@ export function StockPile({
       aria-current={isTurn ? 'true' : undefined}
     >
       {name && compact && (
-        <span className={`text-xs font-semibold truncate max-w-[7rem] ${isTurn ? 'text-amber-200' : 'text-white'}`}>
+        <span className={`text-xs font-semibold text-center break-words px-1 ${isTurn ? 'text-amber-200' : 'text-white'}`}>
           {isTurn ? `${name} · their turn` : name}
         </span>
       )}
       {name && !compact && (
         <div className="flex flex-col items-center">
-          <span className="text-white text-sm font-semibold truncate max-w-[6rem]">{name}</span>
+          <span className="text-white text-sm font-semibold text-center break-words px-1">{name}</span>
           <span className={`text-[11px] font-semibold ${isTurn ? 'text-amber-200' : 'text-white/70'}`}>
             {isTurn ? 'Their turn' : 'Waiting'}
           </span>
