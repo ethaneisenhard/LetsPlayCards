@@ -18,6 +18,13 @@ describe('respondAfterHuman', () => {
 
   it('Alice answers your flip, then waits', () => {
     let s = warStarted();
+    // First cards are shuffled; a tie goes to war and there is no collect yet.
+    for (let i = 0; i < 40; i++) {
+      const you = s.players[0]?.hand[0];
+      const alice = s.players[1]?.hand[0];
+      if (you && alice && you.rank !== alice.rank) break;
+      s = warStarted();
+    }
     s = applyAction(s, { intent: 'war-play', playerId: 'fake-0' });
     expect(nextBotReply(s, 'fake-0', botPolicyFor('war'))).toEqual({
       intent: 'war-play',

@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import { generateGameCode } from './game/deck';
 import { GameRoom } from './durable/game-room';
+import { staticSeoRoute } from './seo/static-routes-pure';
 
 export { GameRoom };
 
@@ -45,16 +46,13 @@ export default {
       return env.ASSETS.fetch(new Request(new URL('/', request.url), request));
     }
 
-    // Glossary static pages (SSG): serve pre-rendered HTML for SEO.
-    if (url.pathname === '/games' || url.pathname === '/games/') {
-      return env.ASSETS.fetch(new Request(new URL('/games/index.html', request.url), request));
+    // Pre-rendered SEO pages (glossary + history): real HTML, not the SPA shell.
+    const seo = staticSeoRoute(url.pathname);
+    if (seo?.kind === 'redirect') {
+      return Response.redirect(new URL(seo.to, request.url), seo.status);
     }
-    const glossaryMatch = url.pathname.match(/^\/games\/([A-Za-z0-9_-]+)\/?$/);
-    if (glossaryMatch) {
-      const slug = glossaryMatch[1];
-      return env.ASSETS.fetch(
-        new Request(new URL(`/games/${slug}/index.html`, request.url), request),
-      );
+    if (seo?.kind === 'asset') {
+      return env.ASSETS.fetch(new Request(new URL(seo.path, request.url), request));
     }
 
     // Static assets (client.js, styles.css) and the SPA shell at "/".
