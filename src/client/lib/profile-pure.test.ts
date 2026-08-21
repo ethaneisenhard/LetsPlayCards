@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { displayInitials, normalizeDisplayName } from './profile-pure';
+import {
+  displayInitials,
+  firstGrapheme,
+  normalizeAvatarEmoji,
+  normalizeDisplayName,
+} from './profile-pure';
 
 describe('profile', () => {
   it('normalizes display names', () => {
@@ -11,5 +16,13 @@ describe('profile', () => {
     expect(displayInitials('')).toBe('?');
     expect(displayInitials('Alex')).toBe('AL');
     expect(displayInitials('Alex Rivera')).toBe('AR');
+  });
+
+  it('takes the first grapheme for avatar emoji', () => {
+    expect(firstGrapheme('🦊 bear')).toBe('🦊');
+    expect(firstGrapheme('  🐧  ')).toBe('🐧');
+    expect(normalizeAvatarEmoji('🦊🐯')).toBe('🦊');
+    expect(normalizeAvatarEmoji('Alex')).toBe('');
+    expect(normalizeAvatarEmoji('')).toBe('');
   });
 });

@@ -1,22 +1,24 @@
 import { useEffect, useState } from 'react';
-import { loadDisplayName } from '../lib/profile';
-import { displayInitials } from '../lib/profile-pure';
+import { loadAvatarEmoji, loadDisplayName } from '../lib/profile';
 import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { useChrome } from '../lib/chrome';
+import { ProfileAvatar } from './ProfileAvatar';
 import { ProfileMenu } from './ProfileMenu';
 
 export function AppHeader() {
   const { navTools } = useChrome();
   const [name, setName] = useState(() => loadDisplayName());
+  const [avatar, setAvatar] = useState(() => loadAvatarEmoji());
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const sync = () => setName(loadDisplayName());
+    const sync = () => {
+      setName(loadDisplayName());
+      setAvatar(loadAvatarEmoji());
+    };
     window.addEventListener(PREFS_CHANGED_EVENT, sync);
     return () => window.removeEventListener(PREFS_CHANGED_EVENT, sync);
   }, []);
-
-  const initial = displayInitials(name);
 
   return (
     <header className="sticky top-0 z-40 overflow-visible border-b border-[color:var(--border)] bg-[color:var(--header-bg)] backdrop-blur-lg">
@@ -40,16 +42,14 @@ export function AppHeader() {
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Profile"
             aria-expanded={menuOpen}
-            className="flex items-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--chip-bg)] pl-1 pr-2.5 py-1 hover:border-gold/40 transition-all"
+            className="flex items-center gap-2 rounded-full hover:opacity-90 transition-opacity"
           >
-            <span className="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold text-xs flex items-center justify-center">
-              {initial}
-            </span>
+            <ProfileAvatar emoji={avatar} />
             <span className="hidden sm:inline text-[color:var(--text)] text-sm font-semibold max-w-[8rem] truncate">
               {name || 'Guest'}
             </span>
           </button>
-          {menuOpen && <ProfileMenu name={name} onClose={() => setMenuOpen(false)} />}
+          {menuOpen && <ProfileMenu onClose={() => setMenuOpen(false)} />}
         </div>
       </div>
     </header>

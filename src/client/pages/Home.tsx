@@ -2,32 +2,33 @@ import { useRef, useState } from 'react';
 import { createGame, getState } from '../lib/api';
 import { rememberCurrentGame } from '../lib/current-games';
 import { isLocalHost } from '../lib/host-pure';
-import { useChrome } from '../lib/chrome';
 import { GAME_CATALOG, LIVE_GAMES } from '../../game/registry/catalog';
 import type { GameType } from '../../game/gameTypes';
+
+type Sheet =
+  | { kind: 'rules'; gameType: GameType }
+  | { kind: 'create'; gameType: GameType };
 
 export function Home() {
   const [joinCode, setJoinCode] = useState('');
   const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const { openGames } = useChrome();
+  const [sheet, setSheet] = useState<Sheet | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'create' | 'join' | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const showDevLink = isLocalHost(window.location.hostname);
 
-  async function handleCreate() {
+  async function handleCreate(gameType: GameType) {
     setBusy('create');
     setError(null);
     try {
-      const gameType = selectedGame ?? 'freeplay';
       const code = await createGame(gameType);
       rememberCurrentGame({ code, gameType, rememberedAt: Date.now() });
       window.location.href = `/game/${code}`;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setBusy(null);
-      setDrawerOpen(false);
+      setSheet(null);
     }
   }
 
@@ -49,33 +50,22 @@ export function Home() {
     }
   }
 
-  function openRules() {
-    if (selectedGame) {
-      setDrawerOpen(true);
-    } else {
-      window.location.href = '/games/';
-    }
+  function openRules(gameType: GameType) {
+    setSelectedGame(gameType);
+    setSheet({ kind: 'rules', gameType });
   }
 
   function navCreate() {
     if (selectedGame) {
-      handleCreate();
-    } else {
-      gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setError('Choose a game above, then tap Create.');
-    }
-  }
-
-  function navSolo() {
-    if (selectedGame) {
-      window.location.href = `/solo/${selectedGame}`;
+      setError(null);
+      setSheet({ kind: 'create', gameType: selectedGame });
       return;
     }
     gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setError('Choose a game above, then tap vs Bots.');
+    setError('Choose a game above, then tap Create.');
   }
 
-  const selected = selectedGame ? LIVE_GAMES.find((e) => e.type === selectedGame) : null;
+  const sheetEntry = sheet ? LIVE_GAMES.find((e) => e.type === sheet.gameType) : null;
 
   return (
     <div className="relative min-h-full bg-page flex flex-col items-center overflow-x-hidden px-4 pt-8 pb-40">
@@ -93,7 +83,7 @@ export function Home() {
           Let&apos;s Play <span className="text-gold">Cards</span>
         </h1>
         <p className="text-[color:var(--muted)] text-sm sm:text-lg mb-8 text-center">
-          {GAME_CATALOG.length} games · pick one, then Create or check Rules
+          {GAME_CATALOG.length} games · pick one, then Join or Create
         </p>
 
         <div ref={gridRef} className="w-full scroll-mt-24">
@@ -107,11 +97,19 @@ export function Home() {
               const config = entry.config;
               const active = selectedGame === entry.type;
               return (
-                <button
+                <div
                   key={entry.type}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedGame(entry.type)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedGame(entry.type);
+                    }
+                  }}
                   className={[
-                    'relative flex flex-col items-start p-3.5 sm:p-5 rounded-2xl border text-left transition-all duration-200',
+                    'relative flex flex-col items-start p-3.5 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer',
                     'bg-linear-to-br',
                     config.color,
                     active
@@ -129,12 +127,25 @@ export function Home() {
                   <span className="text-white/50 text-[11px] sm:text-xs mt-0.5 sm:mt-1 leading-relaxed line-clamp-2">
                     {config.tagline}
                   </span>
-                  <span className="text-white/30 text-[10px] mt-2">
-                    {config.minPlayers === config.maxPlayers
-                      ? `${config.minPlayers} players`
-                      : `${config.minPlayers}–${config.maxPlayers} players`}
-                  </span>
-                </button>
+                  <div className="mt-auto pt-2 w-full flex items-end justify-between gap-2">
+                    <span className="text-white/30 text-[10px]">
+                      {config.minPlayers === config.maxPlayers
+                        ? `${config.minPlayers} players`
+                        : `${config.minPlayers}–${config.maxPlayers} players`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openRules(entry.type);
+                      }}
+                      aria-label={`${config.name} rules`}
+                      className="px-2 py-1 rounded-lg border border-white/15 bg-black/25 hover:border-gold/50 hover:bg-black/40 text-white/80 hover:text-gold text-[10px] font-semibold tracking-wide transition-all shrink-0"
+                    >
+                      Rules
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -148,17 +159,16 @@ export function Home() {
             href="/playground"
             className="inline-block mt-3 text-white/25 hover:text-gold/80 text-xs transition-colors"
           >
-            🛠 Dev playground
+            Dev playground
           </a>
         )}
       </div>
 
-      {/* How-to-play bottom sheet — opened from the Rules nav button */}
-      {drawerOpen && selected && (
+      {sheet && sheetEntry && (
         <>
           <div
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in"
-            onClick={() => setDrawerOpen(false)}
+            onClick={() => setSheet(null)}
           />
           <div className="fixed inset-x-0 bottom-0 z-[60] animate-slide-up max-h-[82vh] overflow-y-auto rounded-t-3xl border-t border-white/10 bg-[#0d1424] shadow-[0_-8px_40px_rgba(0,0,0,0.5)]">
             <div className="sticky top-0 flex justify-center pt-3 pb-1 bg-[#0d1424]">
@@ -166,13 +176,13 @@ export function Home() {
             </div>
             <div className="px-5 pt-2 pb-10">
               <div className="flex items-start gap-3 mb-4">
-                <span className="text-4xl leading-none">{selected.config.emoji}</span>
+                <span className="text-4xl leading-none">{sheetEntry.config.emoji}</span>
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-xl leading-tight">{selected.config.name}</h3>
-                  <p className="text-white/50 text-sm mt-0.5">{selected.config.tagline}</p>
+                  <h3 className="text-white font-bold text-xl leading-tight">{sheetEntry.config.name}</h3>
+                  <p className="text-white/50 text-sm mt-0.5">{sheetEntry.config.tagline}</p>
                 </div>
                 <button
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={() => setSheet(null)}
                   aria-label="Close"
                   className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/70 text-sm flex items-center justify-center shrink-0"
                 >
@@ -180,52 +190,56 @@ export function Home() {
                 </button>
               </div>
 
-              <p className="text-white/70 text-sm mb-4">{selected.config.description}</p>
-
-              <p className="text-white/60 text-xs uppercase tracking-widest mb-2.5">How to play</p>
-              <ul className="space-y-2 mb-5">
-                {selected.config.rules.map((rule, i) => (
-                  <li key={i} className="flex items-start gap-2 text-white/70 text-sm">
-                    <span className="text-gold/70 mt-0.5 shrink-0">›</span>
-                    {rule}
-                  </li>
-                ))}
-              </ul>
-
-              <a
-                href={`/games/${selected.type}/`}
-                className="inline-block mb-5 text-gold/80 hover:text-gold text-sm transition-colors"
-              >
-                Read the full rules →
-              </a>
-
-              <button
-                onClick={handleCreate}
-                disabled={busy !== null}
-                className="w-full py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 text-white font-semibold text-base tracking-wide transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {busy === 'create' ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Creating…
-                  </span>
-                ) : (
-                  `+ Create ${selected.config.name} Game`
-                )}
-              </button>
-              <a
-                href={`/solo/${selected.type}`}
-                className="mt-2 block w-full py-3 rounded-xl border border-white/15 bg-white/5 text-white font-semibold text-base text-center tracking-wide hover:border-gold/40 transition-all"
-              >
-                🤖 Play {selected.config.name} vs Bots
-              </a>
+              {sheet.kind === 'rules' ? (
+                <>
+                  <p className="text-white/70 text-sm mb-4">{sheetEntry.config.description}</p>
+                  <p className="text-white/60 text-xs uppercase tracking-widest mb-2.5">How to play</p>
+                  <ul className="space-y-2 mb-5">
+                    {sheetEntry.config.rules.map((rule, i) => (
+                      <li key={i} className="flex items-start gap-2 text-white/70 text-sm">
+                        <span className="text-gold/70 mt-0.5 shrink-0">›</span>
+                        {rule}
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href={`/games/${sheetEntry.type}/`}
+                    className="inline-block text-gold/80 hover:text-gold text-sm transition-colors"
+                  >
+                    Read the full rules →
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p className="text-white/60 text-sm mb-5">How do you want to play?</p>
+                  <button
+                    onClick={() => handleCreate(sheet.gameType)}
+                    disabled={busy !== null}
+                    className="w-full py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 text-white font-semibold text-base tracking-wide transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {busy === 'create' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        Creating…
+                      </span>
+                    ) : (
+                      `With friends — create ${sheetEntry.config.name}`
+                    )}
+                  </button>
+                  <a
+                    href={`/solo/${sheet.gameType}`}
+                    className="mt-2 block w-full py-3 rounded-xl border border-white/15 bg-white/5 text-white font-semibold text-base text-center tracking-wide hover:border-gold/40 transition-all"
+                  >
+                    Vs bots — play {sheetEntry.config.name} solo
+                  </a>
+                </>
+              )}
               <div className="h-[env(safe-area-inset-bottom)]" />
             </div>
           </div>
         </>
       )}
 
-      {/* Sticky bottom nav — join input + rules + create */}
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-[color:var(--border)] bg-[color:var(--header-bg)] backdrop-blur-lg">
         {error && (
           <div className="bg-red-500/15 border-b border-red-500/10 text-red-400 text-xs text-center px-4 py-2">
@@ -233,14 +247,6 @@ export function Home() {
           </div>
         )}
         <div className="flex items-center gap-2 max-w-3xl mx-auto px-3 py-2.5">
-          <button
-            onClick={openGames}
-            className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--chip-bg)] hover:border-gold/40 text-[color:var(--text)] font-semibold text-[10px] leading-tight tracking-wide transition-all shrink-0 text-center min-w-[4.25rem]"
-          >
-            <span className="text-base leading-none">🃏</span>
-            <span>Current Games</span>
-          </button>
-
           <div className="flex-1 flex items-center gap-1.5 min-w-0">
             <input
               type="text"
@@ -258,34 +264,18 @@ export function Home() {
             <button
               onClick={handleJoin}
               disabled={busy !== null || joinCode.length !== 6}
-              className="px-3.5 py-2.5 rounded-xl bg-[color:var(--chip-bg)] hover:border-gold/40 text-[color:var(--text)] font-bold text-sm tracking-wide border border-[color:var(--border)] disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-[color:var(--chip-bg)] hover:border-gold/40 text-[color:var(--text)] font-bold text-sm tracking-wide border border-[color:var(--border)] disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
             >
               {busy === 'join' ? '…' : 'Join'}
             </button>
           </div>
 
           <button
-            onClick={openRules}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--chip-bg)] hover:border-gold/40 text-[color:var(--text)] font-semibold text-sm tracking-wide transition-all shrink-0"
-          >
-            <span className="text-base leading-none">📖</span>
-            <span>Rules</span>
-          </button>
-
-          <button
-            onClick={navSolo}
-            className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--chip-bg)] hover:border-gold/40 text-[color:var(--text)] font-semibold text-[10px] leading-tight tracking-wide transition-all shrink-0 text-center min-w-[3.5rem]"
-          >
-            <span className="text-base leading-none">🤖</span>
-            <span>vs Bots</span>
-          </button>
-
-          <button
             onClick={navCreate}
             disabled={busy !== null}
-            className="px-4 py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-sm tracking-wide shadow-[0_2px_16px_rgba(16,185,129,0.35)] transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            className="px-5 py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-sm tracking-wide shadow-[0_2px_16px_rgba(16,185,129,0.35)] transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            {busy === 'create' ? '…' : '+ Create'}
+            {busy === 'create' ? '…' : 'Create'}
           </button>
         </div>
         <div className="h-[env(safe-area-inset-bottom)]" />

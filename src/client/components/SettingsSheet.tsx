@@ -2,8 +2,16 @@ import { useEffect, useState } from 'react';
 import { loadAppearanceId, saveAppearance } from '../lib/appearance';
 import { listAppearances } from '../lib/appearance-registry-pure';
 import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
+import {
+  loadAvatarEmoji,
+  loadDisplayName,
+  saveAvatarEmoji,
+  saveDisplayName,
+} from '../lib/profile';
+import { AVATAR_EMOJI_OPTIONS } from '../lib/profile-pure';
 import { listTableThemes } from '../lib/table-theme-registry-pure';
 import { loadTableThemePrefs, pickTableTheme, resolveSurface, type ThemeScope } from '../lib/table-theme';
+import { ProfileAvatar } from './ProfileAvatar';
 
 export function SettingsSheet({
   open,
@@ -17,6 +25,9 @@ export function SettingsSheet({
   const [appearance, setAppearance] = useState(() => loadAppearanceId());
   const [scope, setScope] = useState<ThemeScope>('global');
   const [tableId, setTableId] = useState(() => resolveSurface(gameType ?? 'freeplay').id);
+  const [nameDraft, setNameDraft] = useState(() => loadDisplayName());
+  const [avatar, setAvatar] = useState(() => loadAvatarEmoji());
+  const [customEmoji, setCustomEmoji] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -24,16 +35,41 @@ export function SettingsSheet({
     setTableId(resolveSurface(gameType ?? 'freeplay', undefined).id);
     const prefs = loadTableThemePrefs();
     setScope(gameType && prefs.perGame?.[gameType] ? 'game' : 'global');
+    setNameDraft(loadDisplayName());
+    setAvatar(loadAvatarEmoji());
+    setCustomEmoji('');
   }, [open, gameType]);
 
   useEffect(() => {
     const sync = () => {
       setAppearance(loadAppearanceId());
       setTableId(resolveSurface(gameType ?? 'freeplay').id);
+      setNameDraft(loadDisplayName());
+      setAvatar(loadAvatarEmoji());
     };
     window.addEventListener(PREFS_CHANGED_EVENT, sync);
     return () => window.removeEventListener(PREFS_CHANGED_EVENT, sync);
   }, [gameType]);
+
+  function persistName() {
+    setNameDraft(saveDisplayName(nameDraft));
+  }
+
+  function pickEmoji(emoji: string) {
+    setAvatar(saveAvatarEmoji(emoji));
+    setCustomEmoji('');
+  }
+
+  function clearEmoji() {
+    setAvatar(saveAvatarEmoji(''));
+    setCustomEmoji('');
+  }
+
+  function applyCustomEmoji() {
+    const next = saveAvatarEmoji(customEmoji);
+    setAvatar(next);
+    setCustomEmoji(next);
+  }
 
   if (!open) return null;
 
@@ -57,6 +93,79 @@ export function SettingsSheet({
             >
               ✕
             </button>
+          </div>
+
+          <p className="text-[color:var(--muted)] text-[10px] uppercase tracking-widest mb-2">Profile</p>
+          <div className="mb-6 rounded-2xl border border-[color:var(--border)] bg-[color:var(--chip-bg)] p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <ProfileAvatar emoji={avatar} size="lg" />
+              <div className="min-w-0 flex-1">
+                <label className="text-[color:var(--muted)] text-[10px] uppercase tracking-widest block mb-1.5">
+                  Display name
+                </label>
+                <input
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value.slice(0, 20))}
+                  onBlur={persistName}
+                  onKeyDown={(e) => e.key === 'Enter' && persistName()}
+                  placeholder="Your name"
+                  maxLength={20}
+                  className="w-full bg-[color:var(--sheet-bg)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-[color:var(--text)] text-sm outline-none focus:border-gold/40"
+                />
+              </div>
+            </div>
+
+            <p className="text-[color:var(--muted)] text-[10px] uppercase tracking-widest mb-2">Avatar</p>
+            <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 mb-3">
+              <button
+                type="button"
+                onClick={clearEmoji}
+                aria-label="Default profile icon"
+                aria-pressed={!avatar}
+                className={`aspect-square rounded-xl border flex items-center justify-center transition-all ${
+                  !avatar
+                    ? 'border-gold/50 bg-gold/10'
+                    : 'border-[color:var(--border)] bg-[color:var(--sheet-bg)] hover:border-gold/30'
+                }`}
+              >
+                <ProfileAvatar emoji="" size="sm" />
+              </button>
+              {AVATAR_EMOJI_OPTIONS.map((emoji) => {
+                const active = avatar === emoji;
+                return (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => pickEmoji(emoji)}
+                    aria-label={`Avatar ${emoji}`}
+                    aria-pressed={active}
+                    className={`aspect-square rounded-xl border text-xl leading-none flex items-center justify-center transition-all ${
+                      active
+                        ? 'border-gold/50 bg-gold/10'
+                        : 'border-[color:var(--border)] bg-[color:var(--sheet-bg)] hover:border-gold/30'
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                value={customEmoji}
+                onChange={(e) => setCustomEmoji(e.target.value.slice(0, 8))}
+                onKeyDown={(e) => e.key === 'Enter' && applyCustomEmoji()}
+                placeholder="Or paste any emoji"
+                className="flex-1 min-w-0 bg-[color:var(--sheet-bg)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-[color:var(--text)] text-sm outline-none focus:border-gold/40"
+              />
+              <button
+                type="button"
+                onClick={applyCustomEmoji}
+                className="px-3 py-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--sheet-bg)] text-[color:var(--text)] text-sm font-semibold hover:border-gold/40 shrink-0"
+              >
+                Set
+              </button>
+            </div>
           </div>
 
           <p className="text-[color:var(--muted)] text-[10px] uppercase tracking-widest mb-2">Appearance</p>
