@@ -193,7 +193,7 @@ export interface HistoryFigure {
 }
 
 /** Bump when visuals move so cached preview HTML/images refresh. */
-export const HISTORY_ASSET_VERSION = 'top3';
+export const HISTORY_ASSET_VERSION = 'cards1';
 
 export const HISTORY_HERO = {
   src: '/history/img/italian-15c.webp',
@@ -216,22 +216,119 @@ export const HISTORY_MARKS = {
   id: 'marks',
   heading: 'What the marks looked like',
   intro:
-    'A suit is a family of cards that share one symbol. The four marks on the cards changed as packs traveled. This chart is an original drawing — a simple picture of each set, not a photograph of a real deck.',
-  figure: {
-    src: '/history/img/suit-marks.webp',
-    alt: 'Five rows of simple drawings: Chinese money marks, Mamluk cups coins swords and polo sticks, Italian and Spanish cups coins swords and clubs, German hearts bells acorns and leaves, and French hearts diamonds clubs and spades.',
-    caption:
-      'Top to bottom: money marks from China; cups, coins, swords, and polo sticks from Mamluk Egypt; the same idea in Italy and Spain; hearts, bells, acorns, and leaves in German lands; then the French hearts, diamonds, clubs, and spades most packs use now.',
-    period: 'Original drawing · five places, many centuries',
-    credit: {
-      text: "Let's Play Cards",
-      href: '/history/',
-      license: 'Original illustration (not a photo of a historic pack)',
+    'A suit is a family of cards that share one symbol. The marks changed as packs traveled. These are photographs and scans of old cards — not drawings, and not modern store brands.',
+  figures: [
+    {
+      src: '/history/img/ming-1400.webp',
+      alt: 'A tall, narrow printed paper card from China around 1400, with a small figure and Chinese writing.',
+      caption:
+        'China. A woodcut card found near Turpan. Early Chinese cards were often tied to money — coins and larger sums printed on paper you could hold.',
+      period: 'c. 1400 · China (Ming)',
+      credit: {
+        text: 'Wikimedia Commons / Museum für Völkerkunde, Berlin (via Needham)',
+        href: 'https://commons.wikimedia.org/wiki/File:Ming_Dynasty_playing_card,_c._1400.jpg',
+        license: 'Public domain',
+      },
+      kind: 'photo' as const,
+      width: 280,
+      height: 760,
     },
-    kind: 'drawing' as const,
-    width: 780,
-    height: 2980,
-  } satisfies HistoryFigure,
+    {
+      src: '/history/img/mamluk-cards.webp',
+      alt: 'Four long painted cards from Egypt showing coins, crossed polo sticks, cups, and swords, with no people on them.',
+      caption:
+        'Egypt. Four families — coins, polo sticks, cups, and swords — on a 52-card Mamluk pack from the Topkapı Palace. The pictures are patterns and writing, not faces.',
+      period: 'c. 1500 · Egypt (Mamluk)',
+      credit: {
+        text: 'Countakeshi, assembled from Wikimedia Commons scans of Topkapı cards',
+        href: 'https://commons.wikimedia.org/wiki/File:Mamluk_kanjifah_cards.png',
+        license: 'CC BY-SA 4.0 (resized, converted to WebP)',
+      },
+      kind: 'photo' as const,
+      width: 530,
+      height: 350,
+      wide: true,
+    },
+    {
+      src: '/history/img/italian-15c.webp',
+      alt: 'A printed sheet of early Italian playing cards with cups, coins, swords, and clubs.',
+      caption:
+        'Italy. An uncut sheet from the 1400s. The four marks — later called suits — are already cups, coins, swords, and clubs.',
+      period: '1400s · Italy',
+      credit: {
+        text: 'National Gallery of Art, Washington (Rosenwald Collection, 1951.16.5)',
+        href: 'https://commons.wikimedia.org/wiki/File:Italian_15th_Century,_Playing_Cards,_15th_century,_NGA_41319.jpg',
+        license: 'CC0 1.0',
+      },
+      kind: 'photo' as const,
+      width: 1200,
+      height: 812,
+      wide: true,
+    },
+    {
+      src: '/history/img/italian-pips.webp',
+      alt: 'A closer uncut Italian sheet showing sword, club, cup, and coin aces, then a row of cup number cards.',
+      caption:
+        'Italy, closer. Aces of swords, clubs, cups, and coins, then a row of cup number cards so you can see the mark repeated.',
+      period: '1400s · Italy (Rosenwald sheet)',
+      credit: {
+        text: 'National Gallery of Art, Washington (Rosenwald Collection, 1951.16.6)',
+        href: 'https://commons.wikimedia.org/wiki/File:Italian_15th_Century,_Playing_Cards,_15th_century,_NGA_41320.jpg',
+        license: 'CC0 1.0',
+      },
+      kind: 'photo' as const,
+      width: 1200,
+      height: 814,
+      wide: true,
+    },
+    {
+      src: '/history/img/german-marks.webp',
+      alt: 'Four old German number cards in a row: hearts, bells, acorns, and leaves.',
+      caption:
+        'German lands. Four number cards from a 1566 pack printed in Eger: hearts, bells, acorns, and leaves — the four families German makers settled on.',
+      period: '1566 · Eger (German lands)',
+      credit: {
+        text: 'Wenzel Sigel; scan via Spielkarten-Wiki / Hoffmann, Altdeutsche Spielkarten 1500–1650 (GNM 1993)',
+        href: 'https://commons.wikimedia.org/wiki/File:SPKW-Q1867-karte-15-dt-herz-8.jpg',
+        license: 'Public domain',
+      },
+      kind: 'photo' as const,
+      width: 1232,
+      height: 480,
+      wide: true,
+    },
+    {
+      src: '/history/img/german-hearts.webp',
+      alt: 'A 1500s German number card with red heart marks and a small drawing of two people at the bottom.',
+      caption:
+        'A color woodcut of German hearts — the same heart mark, easier to read on a phone than the faded 1566 scan.',
+      period: '1500s · German lands',
+      credit: {
+        text: 'Universitätsbibliothek Salzburg, G 1273 I',
+        href: 'https://commons.wikimedia.org/wiki/File:Deutsche_Spielkarte_16Jh_ubs_G_1273_I_02.jpg',
+        license: 'Public domain',
+      },
+      kind: 'photo' as const,
+      width: 600,
+      height: 931,
+    },
+    {
+      src: '/history/img/french-pips.webp',
+      alt: 'Four French number cards in a row: seven hearts, eight diamonds, six clubs, and eight spades, with no corner letters.',
+      caption:
+        'France. Number cards from the 1816 Paris pack: hearts, diamonds, clubs, and spades. Cheap two-color marks like these are why this set became the everyday deck. No corner letter yet — you counted the pictures.',
+      period: '1816 · Paris',
+      credit: {
+        text: 'Nicolas-Marie Gatteaux, Bibliothèque nationale de France (via Wikimedia Commons)',
+        href: 'https://commons.wikimedia.org/wiki/Category:French_Portrait_card_deck_-_1816',
+        license: 'Public domain',
+      },
+      kind: 'photo' as const,
+      width: 2087,
+      height: 800,
+      wide: true,
+    },
+  ] satisfies HistoryFigure[],
 };
 
 export const HISTORY_CENTURIES = {
@@ -352,5 +449,11 @@ export const HISTORY_CENTURIES = {
 };
 
 export function historyImageSrcs(): string[] {
-  return [HISTORY_HERO.src, HISTORY_MARKS.figure.src, ...HISTORY_CENTURIES.figures.map((f) => f.src)];
+  return [
+    ...new Set([
+      HISTORY_HERO.src,
+      ...HISTORY_MARKS.figures.map((f) => f.src),
+      ...HISTORY_CENTURIES.figures.map((f) => f.src),
+    ]),
+  ];
 }

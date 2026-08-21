@@ -62,13 +62,14 @@ ${kind}
 }
 
 function renderVisuals(): string {
-  const centuryFigs = HISTORY_CENTURIES.figures
-    .map((f, i) => renderFigure(f, '', i === 0))
+  const markFigs = HISTORY_MARKS.figures
+    .map((f, i) => renderFigure(f, '', i < 2))
     .join('\n');
+  const centuryFigs = HISTORY_CENTURIES.figures.map((f) => renderFigure(f, '', false)).join('\n');
   return `${renderFigure(HISTORY_HERO, 'hero', true)}
 <section id="${HISTORY_MARKS.id}"><h2>${esc(HISTORY_MARKS.heading)}</h2>
 <p>${esc(HISTORY_MARKS.intro)}</p>
-${renderFigure(HISTORY_MARKS.figure, 'marks-chart', true)}</section>
+<div class="marks-grid">${markFigs}</div></section>
 <section id="${HISTORY_CENTURIES.id}"><h2>${esc(HISTORY_CENTURIES.heading)}</h2>
 <p>${esc(HISTORY_CENTURIES.intro)}</p>
 <div class="century-strip">${centuryFigs}</div></section>`;

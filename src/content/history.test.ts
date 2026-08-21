@@ -74,19 +74,29 @@ describe('renderHistoryPage', () => {
     expect(html).toContain('id="centuries"');
     expect(html).toContain(HISTORY_MARKS.heading);
     expect(html).toContain(HISTORY_CENTURIES.heading);
-    expect(html).toContain('Original drawing — not a photo of a real pack');
+    expect(html).not.toContain('Original drawing — not a photo of a real pack');
+    expect(html).not.toMatch(/suit-marks\.(svg|webp)/);
     expect(html).toContain(`<!-- history-visuals:${HISTORY_ASSET_VERSION} -->`);
     expect(html).toMatch(/loading="lazy"/);
     for (const src of historyImageSrcs()) {
       expect(html).toContain(`src="${src}?v=${HISTORY_ASSET_VERSION}"`);
       expect(src.startsWith('/history/img/')).toBe(true);
+      expect(src.endsWith('.svg')).toBe(false);
     }
+    expect(HISTORY_MARKS.figures.length).toBeGreaterThanOrEqual(5);
     expect(HISTORY_CENTURIES.figures.length).toBeGreaterThanOrEqual(6);
-    for (const fig of HISTORY_CENTURIES.figures) {
+    for (const fig of [...HISTORY_MARKS.figures, ...HISTORY_CENTURIES.figures]) {
+      expect(fig.kind).toBe('photo');
       expect(fig.alt.length).toBeGreaterThan(20);
       expect(fig.credit.license.length).toBeGreaterThan(3);
       expect(html).toContain(fig.credit.license);
     }
+    const marksCopy = HISTORY_MARKS.figures.map((f) => `${f.caption} ${f.alt}`).join(' ');
+    expect(marksCopy).toMatch(/China/i);
+    expect(marksCopy).toMatch(/polo/i);
+    expect(marksCopy).toMatch(/cups/i);
+    expect(marksCopy).toMatch(/acorn/i);
+    expect(marksCopy).toMatch(/spade/i);
   });
 
   it('puts pictures above the essay and eager-loads the first three', () => {
@@ -103,12 +113,13 @@ describe('renderHistoryPage', () => {
     }
   });
 
-  it('displays the marks chart as a raster, not an SVG', () => {
-    const src = HISTORY_MARKS.figure.src;
-    expect(src).toBe('/history/img/suit-marks.webp');
-    expect(src.endsWith('.svg')).toBe(false);
-    expect(html).toContain(`src="${src}?v=${HISTORY_ASSET_VERSION}"`);
-    expect(html).not.toMatch(/<img[^>]+suit-marks\.svg/);
-    expect(HISTORY_ASSET_VERSION).toBe('top3');
+  it('shows real historic cards in the marks section, not a drawing', () => {
+    expect(HISTORY_ASSET_VERSION).toBe('cards1');
+    expect(html).toContain('class="marks-grid"');
+    for (const fig of HISTORY_MARKS.figures) {
+      expect(fig.kind).toBe('photo');
+      expect(fig.src).toMatch(/\.webp$/);
+      expect(html).toContain(`src="${fig.src}?v=${HISTORY_ASSET_VERSION}"`);
+    }
   });
 });

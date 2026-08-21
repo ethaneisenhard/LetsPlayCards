@@ -46,7 +46,9 @@ describe('staticSeoRoute', () => {
 
   it('never rewrites /history/img files to the article HTML', () => {
     expect(staticSeoRoute('/history/img/suit-marks.svg')).toBeNull();
-    expect(staticSeoRoute('/history/img/suit-marks.webp')).toBeNull();
+    expect(staticSeoRoute('/history/img/german-marks.webp')).toBeNull();
+    expect(staticSeoRoute('/history/img/french-pips.webp')).toBeNull();
+    expect(staticSeoRoute('/history/img/italian-pips.webp')).toBeNull();
     expect(staticSeoRoute('/history/img/ming-1400.webp')).toBeNull();
     expect(staticSeoRoute('/history/img/italian-15c.webp')).toBeNull();
   });
