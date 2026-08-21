@@ -15,9 +15,9 @@ export function FeltTurnHint({
 }) {
   const you = tone === 'you' || tone === 'deal';
   return (
-    <div role="status" aria-live="polite" className="flex items-center justify-center px-3 shrink-0 z-20">
+    <div role="status" aria-live="polite" className="flex items-center justify-center px-2 shrink-0 z-20">
       <div
-        className={`flex items-center justify-center gap-2 max-w-full px-3 py-1.5 rounded-full ${
+        className={`flex items-center justify-center gap-2 max-w-full px-3 py-2 rounded-full ${
           you ? 'bg-black/50 text-white' : 'bg-black/40 text-white/95'
         }`}
       >

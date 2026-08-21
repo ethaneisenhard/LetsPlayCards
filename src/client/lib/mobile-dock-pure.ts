@@ -2,6 +2,9 @@
  * Phone GameTable: one felt surface (opponents + center + hand).
  * Action pills sit above the fan when a card is picked or a turn-only
  * move is legal — never a second dock with its own background or scroll.
+ *
+ * Spacing is the 4px scale (4 / 8 / 12 / 16). The turn hint must not
+ * kiss center cards — at least 8px, 12px in the center column.
  */
 
 export type PillSlot = 'above-fan';
@@ -46,10 +49,10 @@ export type PhoneTableLayout = {
 
 export function resolvePhoneTableLayout(): PhoneTableLayout {
   return {
-    surfaceClass: 'flex-1 flex flex-col min-h-0 overflow-hidden',
-    opponentRowClass: 'flex items-center justify-center gap-3 px-3 pt-2 pb-1 shrink-0',
-    centerClass: 'relative flex-1 flex flex-col items-center justify-center min-h-0 px-3 py-1',
-    handClass: 'shrink-0 px-1 pb-[env(safe-area-inset-bottom)]',
+    surfaceClass: 'flex-1 flex flex-col min-h-0 overflow-hidden gap-2',
+    opponentRowClass: 'flex items-center justify-center gap-3 px-3 pt-2 shrink-0',
+    centerClass: 'relative flex-1 flex flex-col items-center justify-center min-h-0 gap-3 px-3 py-2',
+    handClass: 'shrink-0 px-2 pb-[env(safe-area-inset-bottom)]',
     pillSlot: 'above-fan',
   };
 }

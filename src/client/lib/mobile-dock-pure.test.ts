@@ -48,6 +48,10 @@ describe('resolvePhoneTableLayout', () => {
     expect(layout.handClass).not.toContain('overflow-y-auto');
     expect(layout.handClass).not.toContain('max-h-');
     expect(layout.opponentRowClass).not.toContain('border-b');
+    expect(layout.surfaceClass).toContain('gap-2');
+    expect(layout.centerClass).toContain('gap-3');
+    expect(layout.centerClass).not.toMatch(/gap-1(?:\s|$)/);
+    expect(layout.handClass).toContain('px-2');
   });
 });
 

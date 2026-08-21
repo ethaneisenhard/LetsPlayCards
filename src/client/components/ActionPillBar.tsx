@@ -43,7 +43,7 @@ export function ActionPillBar({
           shown ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
         }`}
       >
-        <div className="flex items-center gap-1.5 px-2 py-1.5 w-max min-w-full justify-center">
+        <div className="flex items-center gap-1 px-2 py-1 w-max min-w-full justify-center">
           {bar.pills.map((pill) => (
             <button
               key={pill.id}

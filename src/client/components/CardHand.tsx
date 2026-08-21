@@ -184,8 +184,8 @@ export function CardHand({
   if (mobile) {
     const readout = ordered.length > 0 ? `${handCountLine(ordered.length)}: ${handReadout(ordered)}` : handCountLine(0);
     return (
-      <div className="flex flex-col" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
-        <div className="flex items-start gap-2 px-2 pt-1 pb-0.5">
+      <div className="flex flex-col gap-2" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
+        <div className="flex items-start gap-2 px-2">
           <span className="min-w-0 flex-1 text-white text-xs font-semibold break-words">
             {youSeatLine(playerName, isMyTurn)}
           </span>
