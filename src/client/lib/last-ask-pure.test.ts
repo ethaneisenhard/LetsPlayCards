@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bookCounts, bookScoreLine, lastAskLine } from './last-ask-pure';
+import { bookCounts, bookScoreLine, lastAskLine, setCountLabel, setScoreHeading } from './last-ask-pure';
 
 describe('lastAskLine', () => {
   it('formats a miss and a hit', () => {
@@ -22,5 +22,8 @@ describe('bookCounts', () => {
     expect(bookScoreLine({ a: 2, b: 0 }, [{ id: 'a', name: 'You' }, { id: 'b', name: 'Alice' }])).toBe(
       'You 2 · Alice 0',
     );
+    expect(setCountLabel(0)).toBe('0 sets');
+    expect(setCountLabel(1)).toBe('1 set');
+    expect(setScoreHeading()).toBe('Sets of four');
   });
 });

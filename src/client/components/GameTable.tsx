@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AskActionPanel } from './AskActionPanel';
 import { BattleLane } from './BattleLane';
 import { CenterPile } from './CenterPile';
 import { CardFlightLayer } from './CardFlightLayer';
@@ -25,7 +26,20 @@ import {
 import { centerBattleSlots, centerPileCards, hasSharedCenterPile, labeledCenterRows, laneSnapshotFromState } from '../lib/center-projection-pure';
 import { useChrome } from '../lib/chrome';
 import { resolveActorId, resolveIsMyTurn } from '../lib/felt-turn-pure';
-import { bookCounts, bookScoreLine, lastAskLine } from '../lib/last-ask-pure';
+import {
+  ANYONE_TARGET_ID,
+  askButtonLabel,
+  askTurnHint,
+  drawButtonLabel,
+  drawTurnHint,
+  isAnyoneChoice,
+  legalAskTargets,
+  ranksHeld,
+  resolveAskTargetId,
+  seatActionLabel,
+} from '../lib/ask-action-pure';
+import { bookCounts, bookScoreLine, lastAskLine, setCountLabel, setScoreHeading } from '../lib/last-ask-pure';
+import { mobileTurnLine, resolveMobileDock } from '../lib/mobile-dock-pure';
 import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { suitLaddersFromPlayed } from '../lib/suit-ladder-pure';
 import { resolveTableChrome } from '../lib/table-chrome-pure';
@@ -94,6 +108,8 @@ export function GameTable({
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [targetIds, setTargetIds] = useState<string[]>([]);
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
+  const [askRank, setAskRank] = useState<string | null>(null);
+  const [askWho, setAskWho] = useState<string>(ANYONE_TARGET_ID);
   const { setActiveGameType } = useChrome();
   const theme = useMemo(
     () => resolveSurface(game.gameType, config.tableTheme),
@@ -220,7 +236,12 @@ export function GameTable({
   const currentTurnPlayer = actorId
     ? players.find((p) => p.id === actorId)
     : players.find((p) => p.seat === game.currentSeat);
-  const pickedRank = player.hand.find((c) => c.id === pickedCardId)?.rank ?? null;
+  const rankFromCard = player.hand.find((c) => c.id === pickedCardId)?.rank ?? null;
+  const pickedRank = rankFromCard ?? askRank;
+  const heldRanks = ranksHeld(player.hand);
+  const askOpponents = legalAskTargets(opponents);
+  const resolvedAskTargetId = resolveAskTargetId(askWho, opponents);
+  const resolvedAskTarget = askOpponents.find((o) => o.id === resolvedAskTargetId) ?? null;
   const books = bookCounts(gs.books);
   const askLine = lastAskLine(gs.lastAsk);
   const scoreLine = bookScoreLine(books, players);
@@ -232,7 +253,7 @@ export function GameTable({
   const ladders = chrome.showLadders ? suitLaddersFromPlayed(gs.played) : [];
   const hole = chrome.holeFromState ? gs.cards?.[player.id] : undefined;
   const seatScore = (id: string): string | undefined => {
-    if (gs.books) return `${books[id] ?? 0} books`;
+    if (gs.books) return setCountLabel(books[id] ?? 0);
     if (gs.tokens) return `${gs.tokens[id] ?? 0} tokens`;
     if (gs.lives) return `${gs.lives[id] ?? 0} lives`;
     if (gs.chips) return `${gs.chips[id] ?? 0} chips`;
@@ -274,6 +295,23 @@ export function GameTable({
       return;
     }
     setPickedCardId((id) => (id === card.id ? null : card.id));
+    if (chrome.askRankIntent) {
+      setAskRank(pickedCardId === card.id ? null : card.rank);
+    }
+  }
+  function handleAskRank(rank: string) {
+    setAskRank((cur) => (cur === rank ? null : rank));
+    const card = player.hand.find((c) => c.rank === rank);
+    setPickedCardId((id) => (askRank === rank ? null : card?.id ?? id));
+  }
+  function submitAsk(who = askWho) {
+    if (!chrome.askRankIntent || !pickedRank) return;
+    const targetId = resolveAskTargetId(who, opponents);
+    if (!targetId) return;
+    trySend({ intent: chrome.askRankIntent, rank: pickedRank, targetId });
+    setPickedCardId(null);
+    setAskRank(null);
+    setAskWho(ANYONE_TARGET_ID);
   }
   const canPickHand = Boolean(
     chrome.askRankIntent ||
@@ -286,9 +324,8 @@ export function GameTable({
 
   function handleTarget(targetId: string) {
     if (chrome.askRankIntent) {
-      if (!pickedRank) return;
-      trySend({ intent: chrome.askRankIntent, rank: pickedRank, targetId });
-      setPickedCardId(null);
+      setAskWho(targetId);
+      if (pickedRank) submitAsk(targetId);
       return;
     }
     handleDrawFrom(targetId);
@@ -296,7 +333,7 @@ export function GameTable({
   function canTarget(opp: PlayerView): boolean {
     if (busy || !isMyTurn || opp.handCount === 0) return false;
     if (chrome.askRankIntent) {
-      if (!pickedRank) return false;
+      if (!pickedRank) return true;
       return !canAct || canAct({ intent: chrome.askRankIntent, rank: pickedRank, targetId: opp.id });
     }
     if (chrome.drawFromIntent) {
@@ -306,12 +343,51 @@ export function GameTable({
     return false;
   }
   const seatTarget = Boolean(chrome.drawFromIntent || chrome.askRankIntent);
+  const askSubmitLabel = chrome.askRankIntent
+    ? askButtonLabel(pickedRank, resolvedAskTarget?.name ?? null, isAnyoneChoice(askWho))
+    : drawButtonLabel(resolvedAskTarget?.name ?? askOpponents[0]?.name ?? null);
+  const askSubmitReady = chrome.askRankIntent
+    ? Boolean(
+        pickedRank &&
+          resolvedAskTargetId &&
+          (!canAct || canAct({ intent: chrome.askRankIntent, rank: pickedRank, targetId: resolvedAskTargetId })),
+      )
+    : Boolean(
+        resolvedAskTargetId &&
+          (!canAct || canAct({ intent: chrome.drawFromIntent!, targetId: resolvedAskTargetId })),
+      );
+  const dock = resolveMobileDock({
+    askRankIntent: chrome.askRankIntent,
+    drawFromIntent: chrome.drawFromIntent,
+    turnButtonCount: chrome.turnButtons.length,
+  });
+  const showFeltStatus = Boolean(
+    askLine ||
+      scoreLine ||
+      extraRows.length > 0 ||
+      ladders.length > 0 ||
+      hole ||
+      chrome.widowSwap ||
+      chrome.showCorners ||
+      chrome.showFishing ||
+      chrome.showPeg ||
+      typeof gs.pot === 'number',
+  );
+  const showTalkPanel = Boolean(
+    showFeltStatus ||
+      chrome.turnButtons.length > 0 ||
+      chrome.askRankIntent ||
+      chrome.drawFromIntent,
+  );
+  const askPanelOpen = Boolean((chrome.askRankIntent || chrome.drawFromIntent) && isMyTurn && !busy);
 
   useEffect(() => {
     setPickedCardId(null);
     setPickedIds([]);
     setTargetIds([]);
     setSelectedBuildId(null);
+    setAskRank(null);
+    setAskWho(ANYONE_TARGET_ID);
   }, [game.currentSeat, game.gameType, player.id, actorId]);
   const canDraw =
     felt.allowDraw &&
@@ -387,6 +463,69 @@ export function GameTable({
     : null;
 
   const stock = chrome.handReveal === 'stock';
+  function askControls(phone = false) {
+    if (!askPanelOpen) return null;
+    return (
+      <AskActionPanel
+        title={chrome.askRankIntent ? 'Ask' : 'Draw'}
+        hint={
+          phone
+            ? undefined
+            : chrome.askRankIntent
+              ? 'Choose a number or face you already have, then who — Anyone or a named player.'
+              : 'Choose a player and take a card they are holding.'
+        }
+        ranks={chrome.askRankIntent ? heldRanks : undefined}
+        selectedRank={pickedRank}
+        onSelectRank={chrome.askRankIntent ? handleAskRank : undefined}
+        targets={askOpponents.map((o) => ({ id: o.id, name: o.name }))}
+        selectedTargetId={
+          chrome.drawFromIntent && isAnyoneChoice(askWho)
+            ? (askOpponents[0]?.id ?? askWho)
+            : askWho
+        }
+        onSelectTarget={(id) => {
+          setAskWho(id);
+          if (chrome.askRankIntent && pickedRank) submitAsk(id);
+          else if (chrome.drawFromIntent) {
+            const targetId = resolveAskTargetId(id, opponents);
+            if (targetId) handleDrawFrom(targetId);
+          }
+        }}
+        includeAnyone={Boolean(chrome.askRankIntent)}
+        anyoneName={phone ? undefined : askOpponents[0]?.name}
+        disabled={busy || !isMyTurn}
+        submitLabel={askSubmitLabel}
+        submitDisabled={!askSubmitReady}
+        onSubmit={() => {
+          if (chrome.askRankIntent) submitAsk();
+          else if (resolvedAskTargetId) handleDrawFrom(resolvedAskTargetId);
+        }}
+        phone={phone}
+      />
+    );
+  }
+  function turnButtonRow(phone = false) {
+    if (chrome.turnButtons.length === 0 || !isMyTurn || busy) return null;
+    return (
+      <div className="flex flex-wrap justify-center gap-2">
+        {chrome.turnButtons.map((b) => (
+          <button
+            key={`${b.intent}-${b.side ?? ''}-${b.label}`}
+            type="button"
+            onClick={() => handleTurnButton(b)}
+            className={
+              phone
+                ? 'min-h-12 px-5 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-base font-bold'
+                : 'px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold'
+            }
+          >
+            {b.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full h-full min-h-0 select-none" style={{ background: theme.pageBg }}>
@@ -430,21 +569,32 @@ export function GameTable({
               ? revealWinnerId === player.id
                 ? '● You won — cards coming home…'
                 : `● ${winnerName} won — collecting…`
-              : isMyTurn
-              ? chrome.drawFromIntent
-                ? '● Your turn · click a player to draw'
-                : chrome.askRankIntent
-                  ? pickedRank
-                    ? `● Ask someone for ${pickedRank}s`
-                    : '● Your turn · pick a rank, then a player'
-                  : chrome.turnButtons.length > 0
-                    ? '● Your turn · Hit or Stand'
-                    : '● Your turn'
-              : `Waiting for ${currentTurnPlayer?.name ?? '…'}…`}
+              : (
+                <>
+                  <span className="sm:hidden">
+                    {mobileTurnLine({
+                      busy: false,
+                      isMyTurn,
+                      waitingName: currentTurnPlayer?.name,
+                    })}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {isMyTurn
+                      ? chrome.drawFromIntent
+                        ? drawTurnHint()
+                        : chrome.askRankIntent
+                          ? askTurnHint(pickedRank)
+                          : chrome.turnButtons.length > 0
+                            ? `● Your turn · ${chrome.turnButtons.map((b) => b.label).join(' or ')}`
+                            : '● Your turn'
+                      : `Waiting for ${currentTurnPlayer?.name ?? '…'}…`}
+                  </span>
+                </>
+              )}
         </span>
         {isMyTurn && hasDrawLimit && (
           <span className="text-white/30">
-            · {drawsLeft > 0 ? `${drawsLeft} draw${drawsLeft !== 1 ? 's' : ''} left` : 'no draws left'} · discard to end turn
+            · {drawsLeft > 0 ? `${drawsLeft} draw${drawsLeft !== 1 ? 's' : ''} left` : 'no draws left'} · put one aside to end the turn
           </span>
         )}
       </div>
@@ -460,16 +610,18 @@ export function GameTable({
               count={opp.handCount}
               name={opp.name}
               small
-              onFlip={seatTarget ? () => handleTarget(opp.id) : undefined}
+              onFlip={seatTarget && !dock.hideSeatActionHint ? () => handleTarget(opp.id) : undefined}
               disabled={!canTarget(opp)}
               actionLabel={
-                chrome.askRankIntent
-                  ? pickedRank
-                    ? `Ask ${opp.name} for ${pickedRank}s`
-                    : `Ask ${opp.name}`
-                  : chrome.drawFromIntent
-                    ? `Draw from ${opp.name}`
-                    : undefined
+                dock.hideSeatActionHint
+                  ? undefined
+                  : seatActionLabel({
+                      askRank: Boolean(chrome.askRankIntent),
+                      drawFrom: Boolean(chrome.drawFromIntent),
+                      rank: pickedRank,
+                      name: opp.name,
+                      handCount: opp.handCount,
+                    })
               }
             />
           ))}
@@ -511,11 +663,8 @@ export function GameTable({
           {chrome.showMemory && (
             <MemoryGrid grid={gs.grid} busy={busy || !isMyTurn} onFlip={(index) => trySend({ intent: 'flip', index })} />
           )}
-          {chrome.drawFromIntent && isMyTurn && !busy && (
-            <p className="text-white/45 text-xs text-center max-w-[10rem]">Click a player to draw</p>
-          )}
-          {(askLine || scoreLine || extraRows.length > 0 || chrome.turnButtons.length > 0 || ladders.length > 0 || hole || chrome.widowSwap || chrome.showCorners || chrome.showFishing || chrome.showPeg) && (
-            <div className="flex flex-col items-center gap-2 max-w-[14rem]">
+          {showFeltStatus && (
+            <div className="flex flex-col items-center gap-2 max-w-[20rem]">
               {typeof gs.pot === 'number' && <p className="text-gold/60 text-[10px]">Pot {gs.pot}</p>}
               <FeltBoardExtras
                 showCorners={chrome.showCorners}
@@ -572,22 +721,8 @@ export function GameTable({
                   </div>
                 </div>
               ))}
-              {chrome.turnButtons.length > 0 && isMyTurn && !busy && (
-                <div className="flex flex-wrap justify-center gap-2">
-                  {chrome.turnButtons.map((b) => (
-                    <button
-                      key={`${b.intent}-${b.side ?? ''}-${b.label}`}
-                      type="button"
-                      onClick={() => handleTurnButton(b)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold"
-                    >
-                      {b.label}
-                    </button>
-                  ))}
-                </div>
-              )}
               {askLine && <p className="text-white/50 text-[10px] text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/50 text-[10px] text-center">Books · {scoreLine}</p>}
+              {scoreLine && <p className="text-gold/50 text-[10px] text-center">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -622,7 +757,7 @@ export function GameTable({
                   </span>
                 </div>
               ) : (
-                <span className="text-white/15 text-[9px] text-center">Discard</span>
+                <span className="text-white/15 text-[9px] text-center">Leftover</span>
               )}
             </div>
             <span className="text-white/20 text-[9px] h-3">{game.discardPile.length}</span>
@@ -630,7 +765,7 @@ export function GameTable({
           )}
         </div>
 
-        <div className="border-t border-white/5 shrink-0 pb-[env(safe-area-inset-bottom)]" style={{ background: theme.handBg }}>
+        <div className="border-t border-white/5 shrink-0 max-h-[58%] overflow-y-auto pb-[env(safe-area-inset-bottom)]" style={{ background: theme.handBg }}>
           {stock ? (
             <FaceDownStock
               playerId={player.id}
@@ -648,17 +783,17 @@ export function GameTable({
                 onPick={canPickHand ? handlePick : undefined}
                 pickedCardId={pickedCardId}
                 pickedCardIds={chrome.drawPicked || chrome.cribDiscard ? pickedIds : undefined}
-                pickHint={
-                  chrome.askRankIntent
-                    ? pickedRank
-                      ? `Ask someone for ${pickedRank}s`
-                      : 'Tap a rank you hold'
-                    : undefined
-                }
                 playerName={player.name}
                 isMyTurn={isMyTurn && !busy}
                 mobile
+                quiet={dock.quietHandHints}
               />
+            </div>
+          )}
+          {dock.underHand && (askPanelOpen || (chrome.turnButtons.length > 0 && isMyTurn && !busy)) && (
+            <div className="flex flex-col items-center gap-2 px-3 pt-1 pb-3">
+              {askControls(true)}
+              {turnButtonRow(true)}
             </div>
           )}
         </div>
@@ -684,15 +819,13 @@ export function GameTable({
               position="top"
               stock={stock}
               onSelect={seatTarget ? () => handleTarget(opp.id) : undefined}
-              selectLabel={
-                chrome.askRankIntent
-                  ? pickedRank
-                    ? `Ask ${opp.name} for ${pickedRank}s`
-                    : `Ask ${opp.name}`
-                  : chrome.drawFromIntent
-                    ? `Draw from ${opp.name}`
-                    : undefined
-              }
+              selectLabel={seatActionLabel({
+                askRank: Boolean(chrome.askRankIntent),
+                drawFrom: Boolean(chrome.drawFromIntent),
+                rank: pickedRank,
+                name: opp.name,
+                handCount: opp.handCount,
+              })}
               selectDisabled={!canTarget(opp)}
               scoreLabel={seatScore(opp.id)}
             />
@@ -739,11 +872,9 @@ export function GameTable({
           {chrome.showMemory && (
             <MemoryGrid grid={gs.grid} busy={busy || !isMyTurn} onFlip={(index) => trySend({ intent: 'flip', index })} />
           )}
-          {chrome.drawFromIntent && isMyTurn && !busy && (
-            <p className="text-white/50 text-sm text-center max-w-xs">Click a player to draw from their hand</p>
-          )}
-          {(askLine || scoreLine || extraRows.length > 0 || chrome.turnButtons.length > 0 || ladders.length > 0 || hole || chrome.widowSwap || chrome.showCorners || chrome.showFishing || chrome.showPeg) && (
+          {showTalkPanel && (
             <div className="flex flex-col items-center gap-3 max-w-lg">
+              {askControls()}
               {typeof gs.pot === 'number' && <p className="text-gold/70 text-sm">Pot {gs.pot}</p>}
               <FeltBoardExtras
                 showCorners={chrome.showCorners}
@@ -779,7 +910,7 @@ export function GameTable({
               )}
               {chrome.widowSwap && (gs.widow ?? []).length > 0 && (
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-white/40 text-xs uppercase tracking-widest">Widow · pick a hand card first</span>
+                  <span className="text-white/40 text-xs uppercase tracking-widest">Shared cards · pick one of yours first</span>
                   <div className="flex gap-2">
                     {(gs.widow ?? []).map((card, i) => (
                       <PlayingCard
@@ -803,7 +934,7 @@ export function GameTable({
                       }}
                       className="text-white/50 text-xs hover:text-gold"
                     >
-                      Swap with stock
+                      Swap with the leftover pile
                     </button>
                   )}
                 </div>
@@ -818,22 +949,9 @@ export function GameTable({
                   </div>
                 </div>
               ))}
-              {chrome.turnButtons.length > 0 && isMyTurn && !busy && (
-                <div className="flex flex-wrap justify-center gap-3">
-                  {chrome.turnButtons.map((b) => (
-                    <button
-                      key={`${b.intent}-${b.side ?? ''}-${b.label}`}
-                      type="button"
-                      onClick={() => handleTurnButton(b)}
-                      className="px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold"
-                    >
-                      {b.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {turnButtonRow()}
               {askLine && <p className="text-white/60 text-sm text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/60 text-xs text-center">Books · {scoreLine}</p>}
+              {scoreLine && <p className="text-gold/60 text-xs text-center">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -861,9 +979,9 @@ export function GameTable({
             <div className="w-[70px] h-[100px] rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center">
               {game.discardPile.length > 0
                 ? <PlayingCard card={game.discardPile[game.discardPile.length - 1]} />
-                : <span className="text-white/20 text-xs text-center leading-tight">Discard<br />Pile</span>}
+                : <span className="text-white/20 text-xs text-center leading-tight">Leftover<br />pile</span>}
             </div>
-            <span className="text-white/30 text-xs h-4">{game.discardPile.length} discarded</span>
+            <span className="text-white/30 text-xs h-4">{game.discardPile.length} set aside</span>
           </div>
           )}
         </div>
@@ -888,8 +1006,8 @@ export function GameTable({
                 pickHint={
                   chrome.askRankIntent
                     ? pickedRank
-                      ? `Ask someone for ${pickedRank}s`
-                      : 'Click a rank you hold, then a player'
+                      ? `Asking for ${pickedRank}s — use Ask above, or click a player`
+                      : 'Or tap a card to pick its number or face'
                     : undefined
                 }
                 playerName={player.name}

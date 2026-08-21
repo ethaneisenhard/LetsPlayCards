@@ -67,7 +67,7 @@ export const DRAW_FROM_INTENT: Record<string, string> = {
   old_maid: 'draw-from',
 };
 
-/** Select a rank in hand, then click a player to ask. */
+/** Ask control: rank from the hand, then a seat (or anyone). */
 export const ASK_RANK_INTENT: Record<string, string> = {
   go_fish: 'gofish-ask',
 };
@@ -75,8 +75,8 @@ export const ASK_RANK_INTENT: Record<string, string> = {
 /** Seat-level buttons (no card target). */
 export const TURN_BUTTONS: Record<string, TurnButton[]> = {
   blackjack: [
-    { intent: 'hit', label: 'Hit' },
-    { intent: 'stand', label: 'Stand' },
+    { intent: 'hit', label: 'Take a card' },
+    { intent: 'stand', label: 'Stay' },
   ],
   sevens: [{ intent: 'pass', label: 'Pass' }],
   chase_the_ace: [
@@ -87,16 +87,16 @@ export const TURN_BUTTONS: Record<string, TurnButton[]> = {
     { intent: 'swap', label: 'Swap' },
     { intent: 'draw', label: 'Draw' },
   ],
-  thirty_one: [{ intent: 'knock', label: 'Knock' }],
+  thirty_one: [{ intent: 'knock', label: 'Stop here' }],
   texas_holdem: [
-    { intent: 'check', label: 'Check' },
-    { intent: 'call', label: 'Call' },
-    { intent: 'raise', label: 'Raise' },
-    { intent: 'fold', label: 'Fold' },
+    { intent: 'check', label: 'No bet' },
+    { intent: 'call', label: 'Match bet' },
+    { intent: 'raise', label: 'Bet more' },
+    { intent: 'fold', label: 'Give up' },
   ],
   five_card_draw: [
-    { intent: 'draw', label: 'Draw / Stand' },
-    { intent: 'showdown', label: 'Showdown' },
+    { intent: 'draw', label: 'Swap or keep' },
+    { intent: 'showdown', label: 'Compare' },
   ],
   baccarat: [
     { intent: 'bet', label: 'Player 10', side: 'player', amount: 10 },
@@ -106,16 +106,16 @@ export const TURN_BUTTONS: Record<string, TurnButton[]> = {
   kings_in_the_corner: [
     { intent: 'draw', label: 'Draw' },
     { intent: 'play-center', label: 'To center' },
-    { intent: 'discard', label: 'Discard' },
+    { intent: 'discard', label: 'Put one aside' },
   ],
   cassino: [
-    { intent: 'capture', label: 'Capture' },
-    { intent: 'build', label: 'Build' },
-    { intent: 'trail', label: 'Trail' },
-    { intent: 'capture-build', label: 'Take build' },
+    { intent: 'capture', label: 'Take match' },
+    { intent: 'build', label: 'Make a pile' },
+    { intent: 'trail', label: 'Leave it' },
+    { intent: 'capture-build', label: 'Take the pile' },
   ],
   cribbage: [
-    { intent: 'discard-to-crib', label: 'To crib' },
+    { intent: 'discard-to-crib', label: 'Extra pile' },
     { intent: 'go', label: 'Go' },
     { intent: 'count', label: 'Count' },
   ],
@@ -171,6 +171,7 @@ export function resolveTableChrome(input: {
       handReveal !== 'stock' &&
       !trick &&
       !drawFromIntent &&
+      !askRankIntent &&
       !showTableau &&
       !showMemory &&
       !showCorners &&

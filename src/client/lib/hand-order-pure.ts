@@ -17,15 +17,48 @@ export function sortHandBySuit(cards: readonly Card[]): Card[] {
   });
 }
 
+/** Cluster the same number or face (both 2s, both Queens). Keeps first-seen group order — not low-to-high. */
+export function groupHandByPairs(cards: readonly Card[]): Card[] {
+  const order: string[] = [];
+  const buckets = new Map<string, Card[]>();
+  for (const card of cards) {
+    const list = buckets.get(card.rank);
+    if (list) list.push(card);
+    else {
+      buckets.set(card.rank, [card]);
+      order.push(card.rank);
+    }
+  }
+  return order.flatMap((rank) => buckets.get(rank) ?? []);
+}
+
 export function moveCardInHand(cards: readonly Card[], cardId: string, delta: number): Card[] {
   const i = cards.findIndex((c) => c.id === cardId);
   if (i < 0 || delta === 0) return [...cards];
-  const j = Math.max(0, Math.min(cards.length - 1, i + delta));
+  return moveCardToIndex(cards, cardId, i + delta);
+}
+
+export function moveCardToIndex(cards: readonly Card[], cardId: string, toIndex: number): Card[] {
+  const i = cards.findIndex((c) => c.id === cardId);
+  if (i < 0) return [...cards];
+  const j = Math.max(0, Math.min(cards.length - 1, toIndex));
   if (j === i) return [...cards];
   const next = [...cards];
   const [card] = next.splice(i, 1);
   next.splice(j, 0, card);
   return next;
+}
+
+/** Which hand slot a pointer is over in the overlapping fan. */
+export function dropIndexFromOffset(
+  offsetX: number,
+  count: number,
+  gap: number,
+  cardWidth: number,
+): number {
+  if (count <= 1) return 0;
+  const step = gap > 0 ? gap : cardWidth;
+  return Math.max(0, Math.min(count - 1, Math.round(offsetX / step)));
 }
 
 /** Keep the player's arrangement; drop gone cards; append newly dealt ones. */

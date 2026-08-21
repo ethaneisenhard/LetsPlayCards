@@ -10,6 +10,7 @@
     "test": "vitest run",
     "playtest": "tsx scripts/playtest.ts",
     "qa:next": "tsx scripts/qa-next.ts",
+    "rules:audit": "tsx scripts/rules-audit.ts",
     "d1:migrate": "wrangler d1 migrations apply letsplaycards --local",
     "d1:migrate:remote": "wrangler d1 migrations apply letsplaycards --remote",
     "ship": "pnpm build && wrangler deploy"

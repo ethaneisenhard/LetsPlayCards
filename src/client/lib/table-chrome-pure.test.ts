@@ -74,15 +74,15 @@ describe('resolveTableChrome', () => {
   it('maps Go Fish to ask-rank', () => {
     expect(resolveTableChrome({ gameType: 'go_fish' })).toMatchObject({
       askRankIntent: 'gofish-ask',
-      showSharedPiles: true,
+      showSharedPiles: false,
     });
   });
 
   it('maps Blackjack to hit / stand', () => {
     expect(resolveTableChrome({ gameType: 'blackjack' })).toMatchObject({
       turnButtons: [
-        { intent: 'hit', label: 'Hit' },
-        { intent: 'stand', label: 'Stand' },
+        { intent: 'hit', label: 'Take a card' },
+        { intent: 'stand', label: 'Stay' },
       ],
       showSharedPiles: false,
     });
