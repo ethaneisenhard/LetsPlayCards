@@ -38,6 +38,7 @@ export const UNBOUNDED_GAMES = new Set<GameType>([
   'oh_hell',
   'euchre',
   'spite_and_malice',
+  'speed',
 ]);
 
 const LONG_LUCK = new Set<GameType>([
