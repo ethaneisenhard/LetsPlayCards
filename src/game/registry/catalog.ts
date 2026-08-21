@@ -22,10 +22,17 @@ export const GAME_CATALOG: CatalogEntry[] = [
     deck: {},
     status: 'live',
     config: {
-      id: 'go_fish', name: 'Go Fish', tagline: 'Ask, collect, dominate', emoji: '🐟',
-      description: 'Ask opponents for ranks you need. If they have it, you get it. If not — Go Fish!',
+      id: 'go_fish', name: 'Go Fish', tagline: 'Ask for ranks you hold', emoji: '🐟',
+      description: 'Pick a rank you hold and ask Anyone or a seat. They give those cards or you Go Fish. Four of a rank is a book.',
       minPlayers: 2, maxPlayers: 6, dealCount: 7, color: 'from-blue-900/60 to-cyan-900/60',
-      rules: ['Each player gets 7 cards (5 with 4+ players)', 'Ask any player for a rank you hold', 'They give you all of that rank if they have it', 'Otherwise — "Go Fish!" draw one', 'Collect all 4 of a rank to score a book', 'Most books when the deck runs out wins'],
+      rules: [
+        '7 cards each (5 if 4 or more players)',
+        'Pick a rank you hold, then Anyone or a named seat',
+        'Tap Ask — they give every card of that rank and you ask again',
+        'If they have none: Go Fish — draw one, your turn ends',
+        'Four of a rank is a book (one point)',
+        'Most books wins when the deck and every hand are empty',
+      ],
     },
   },
   {
@@ -37,7 +44,7 @@ export const GAME_CATALOG: CatalogEntry[] = [
       id: 'freeplay', name: 'Free Play', tagline: 'Any game, your rules', emoji: '🃏',
       description: 'A virtual card table with no rules enforced. Draw, play, discard however you want.',
       minPlayers: 1, maxPlayers: 8, dealCount: 7, color: 'from-emerald-900/60 to-teal-900/60',
-      rules: ['No rules enforced — use your own', 'Deal any number of cards', 'Play, pick up, or discard freely', 'Works for Rummy, Poker, Crazy Eights, and more'],
+      rules: ['No engine rules — agree your own', 'Starts with 7 cards; draw when you want more', 'Play, pick up, or discard any card', 'Works for house-rule Rummy, Poker, and more'],
     },
   },
   {
@@ -49,7 +56,7 @@ export const GAME_CATALOG: CatalogEntry[] = [
       id: 'hearts', name: 'Hearts', tagline: 'Avoid hearts and the queen', emoji: '♥️',
       description: 'Trick-taking with a twist: you do NOT want hearts or the queen of spades.',
       minPlayers: 3, maxPlayers: 6, dealCount: 'all', color: 'from-red-900/60 to-rose-900/60',
-      rules: ['Follow suit if you can', 'Hearts = 1 point each, ♠Q = 13 points', 'Lowest score wins', 'Shoot the moon: collect all points to zero out'],
+      rules: ['Play a card — follow suit if you can', 'Hearts = 1 point each, ♠Q = 13 points', 'Lowest score wins', 'Shoot the moon: take every heart and ♠Q to dump the points'],
     },
   },
   {
@@ -61,7 +68,7 @@ export const GAME_CATALOG: CatalogEntry[] = [
       id: 'crazy_eights', name: 'Crazy Eights', tagline: 'Match suit or rank', emoji: '8️⃣',
       description: 'Shed your hand by matching the top card. Eights are wild — change the suit.',
       minPlayers: 2, maxPlayers: 7, dealCount: 7, color: 'from-violet-900/60 to-purple-900/60',
-      rules: ['Play a card matching suit or rank', '8s are wild — pick a new suit', 'Can\'t play? Draw until you can', 'First to empty their hand wins'],
+      rules: ['7 cards each', 'Play a card matching suit or rank', '8s are wild — pick a new suit', 'Can\'t play? Draw until you can', 'First to empty their hand wins'],
     },
   },
   {
@@ -73,7 +80,7 @@ export const GAME_CATALOG: CatalogEntry[] = [
       id: 'rummy', name: 'Rummy', tagline: 'Draw, meld, go out', emoji: '🎴',
       description: 'Form sets (same rank) and runs (consecutive suit) to empty your hand.',
       minPlayers: 2, maxPlayers: 6, dealCount: 10, color: 'from-amber-900/60 to-yellow-900/60',
-      rules: ['Draw one card each turn', 'Meld sets (3-4 of a rank) or runs (3+ same suit)', 'Discard one to end your turn', 'Going out ends the round; lowest deadwood wins'],
+      rules: ['10 cards each', 'Draw one card each turn', 'Meld sets (3–4 of a rank) or runs (3+ same suit)', 'Discard one to end your turn', 'Empty your hand; leftover unmelded cards are deadwood — lowest wins'],
     },
   },
   {
@@ -92,47 +99,47 @@ export const GAME_CATALOG: CatalogEntry[] = [
   // ── Planned (trick) ────────────────────────────────────────────────────────
   {
     type: 'spades', family: 'trick', deck: {}, status: 'live',
-    config: { id: 'spades', name: 'Spades', tagline: 'Bid and make your tricks', emoji: '♠️', description: 'Partnership trick-taking with bidding; spades are always trump.', minPlayers: 4, maxPlayers: 4, dealCount: 'all', color: 'from-slate-800/60 to-slate-900/60', rules: ['Spades are always trump', 'Bid the number of tricks you\'ll take', 'Make your bid to score; miss it and go set', 'First partnership to 500 wins'] },
+    config: { id: 'spades', name: 'Spades', tagline: 'Bid and make your tricks', emoji: '♠️', description: 'Partnership trick-taking with bidding; spades are always trump.', minPlayers: 4, maxPlayers: 4, dealCount: 'all', color: 'from-slate-800/60 to-slate-900/60', rules: ['Bid how many tricks you will take', 'Then play a card — follow suit; spades are always trump', 'Make your bid to score; miss it and go set', 'First partnership to 500 wins'] },
   },
   {
     type: 'bridge', family: 'trick', deck: {}, status: 'live',
-    config: { id: 'bridge', name: 'Bridge', tagline: 'The king of trick games', emoji: '🌉', description: 'Full contract bridge — bidding, dummy play, and scoring.', minPlayers: 4, maxPlayers: 4, dealCount: 'all', color: 'from-sky-900/60 to-blue-900/60', rules: ['Auction bidding determines trump and contract', 'Dummy hand is exposed after the opening lead', 'Take your contract to score; fail and go down', 'Rubber or duplicate scoring'] },
+    config: { id: 'bridge', name: 'Bridge', tagline: 'The king of trick games', emoji: '🌉', description: 'Full contract bridge — bidding, dummy play, and scoring.', minPlayers: 4, maxPlayers: 4, dealCount: 'all', color: 'from-sky-900/60 to-blue-900/60', rules: ['Bid the auction to set trump and the contract', 'Play a card — follow suit', 'Dummy is partner\'s hand, exposed face-up after the opening lead', 'Make the contract to score; fail and go down'] },
   },
   {
     type: 'euchre', family: 'trick', deck: { ranks: ['9', '10', 'J', 'Q', 'K', 'A'] }, status: 'live',
-    config: { id: 'euchre', name: 'Euchre', tagline: 'Trump, bower, and partners', emoji: '🃏', description: 'Fast 24-card partnership trick game with the famous right and left bower.', minPlayers: 4, maxPlayers: 4, dealCount: 5, color: 'from-indigo-900/60 to-violet-900/60', rules: ['24-card deck (9–A)', 'Jack of trump is the right bower (highest)', 'First team to 10 points wins'] },
+    config: { id: 'euchre', name: 'Euchre', tagline: 'Trump, bower, and partners', emoji: '🃏', description: 'Fast 24-card partnership trick game with the famous right and left bower.', minPlayers: 4, maxPlayers: 4, dealCount: 5, color: 'from-indigo-900/60 to-violet-900/60', rules: ['5 cards each from a 24-card deck (9–A)', 'Name trump; jack of trump is the right bower (highest)', 'Play a card — follow suit if you can', 'First team to 10 points wins'] },
   },
   {
     type: 'whist', family: 'trick', deck: {}, status: 'live',
-    config: { id: 'whist', name: 'Whist', tagline: 'The classic trick game', emoji: '🎴', description: 'Plain-trick game with no bidding — the ancestor of Bridge.', minPlayers: 4, maxPlayers: 4, dealCount: 'all', color: 'from-stone-700/60 to-stone-900/60', rules: ['Trump is the last card dealt', 'Follow suit; highest trump or card wins', 'Team with most tricks scores', 'First to 5 points wins'] },
+    config: { id: 'whist', name: 'Whist', tagline: 'The classic trick game', emoji: '🎴', description: 'Plain-trick game with no bidding — the ancestor of Bridge.', minPlayers: 4, maxPlayers: 4, dealCount: 'all', color: 'from-stone-700/60 to-stone-900/60', rules: ['Trump is the last card dealt', 'Play a card — follow suit; highest trump or card wins', 'Team with most tricks scores', 'First to 5 points wins'] },
   },
   {
     type: 'oh_hell', family: 'trick', deck: {}, status: 'live',
-    config: { id: 'oh_hell', name: 'Oh Hell', tagline: 'Bid your exact tricks', emoji: '🔥', description: 'Predict exactly how many tricks you\'ll take — no more, no less.', minPlayers: 3, maxPlayers: 7, dealCount: 'all', color: 'from-orange-900/60 to-red-900/60', rules: ['Bid the exact number of tricks you\'ll win', 'Make your bid exactly to score', 'Over or under = no points', 'Rounds shrink and grow the hand size'] },
+    config: { id: 'oh_hell', name: 'Oh Hell', tagline: 'Bid your exact tricks', emoji: '🔥', description: 'Predict exactly how many tricks you\'ll take — no more, no less.', minPlayers: 3, maxPlayers: 7, dealCount: 'all', color: 'from-orange-900/60 to-red-900/60', rules: ['Bid the exact number of tricks you will win', 'Play a card — follow suit', 'Score only if you take exactly that many', 'Rounds shrink and grow the hand size'] },
   },
 
   // ── Planned (meld) ─────────────────────────────────────────────────────────
   {
     type: 'gin_rummy', family: 'meld', deck: {}, status: 'live',
-    config: { id: 'gin_rummy', name: 'Gin Rummy', tagline: 'Knock, gin, or go down', emoji: '🍸', description: 'Two-player Rummy where you knock at 10 deadwood or fewer.', minPlayers: 2, maxPlayers: 2, dealCount: 10, color: 'from-teal-900/60 to-emerald-900/60', rules: ['10 cards each', 'Knock when deadwood ≤ 10', 'Gin = all cards melded', 'Undercut if your deadwood is lower'] },
+    config: { id: 'gin_rummy', name: 'Gin Rummy', tagline: 'Knock, gin, or go down', emoji: '🍸', description: 'Two-player Rummy where you knock at 10 deadwood or fewer.', minPlayers: 2, maxPlayers: 2, dealCount: 10, color: 'from-teal-900/60 to-emerald-900/60', rules: ['10 cards each', 'Draw one, then discard one', 'Knock when unmelded cards (deadwood) total 10 or less', 'Gin = every card melded; undercut if their deadwood is lower'] },
   },
   {
     type: 'rummy_500', family: 'meld', deck: {}, status: 'live',
-    config: { id: 'rummy_500', name: 'Rummy 500', tagline: 'Score to 500', emoji: '🎯', description: 'Rummy with point scoring and the discard pile in play.', minPlayers: 2, maxPlayers: 8, dealCount: 7, color: 'from-cyan-900/60 to-blue-900/60', rules: ['Cards are worth points', 'Draw from deck or discard pile', 'First to 500 points wins', 'Going out ends the hand'] },
+    config: { id: 'rummy_500', name: 'Rummy 500', tagline: 'Score to 500', emoji: '🎯', description: 'Rummy with point scoring and the discard pile in play.', minPlayers: 2, maxPlayers: 8, dealCount: 7, color: 'from-cyan-900/60 to-blue-900/60', rules: ['13 cards each with 2 players, 7 with 3+', 'Draw from the deck or the discard pile', 'Meld sets or runs, then discard', 'First to 500 points wins'] },
   },
   {
     type: 'canasta', family: 'meld', deck: { copies: 2 }, status: 'live',
-    config: { id: 'canasta', name: 'Canasta', tagline: 'Meld your way to 5000', emoji: '🧺', description: 'Partnership melding with wild cards and the eponymous 7-card canasta.', minPlayers: 4, maxPlayers: 4, dealCount: 11, color: 'from-lime-900/60 to-green-900/60', rules: ['Two 52-card decks', 'Meld 3+ of a rank', 'A canasta = 7 of a rank', 'First to 5000 points wins'] },
+    config: { id: 'canasta', name: 'Canasta', tagline: 'Meld your way to 5000', emoji: '🧺', description: 'Partnership melding with wild cards and the eponymous 7-card canasta.', minPlayers: 4, maxPlayers: 4, dealCount: 11, color: 'from-lime-900/60 to-green-900/60', rules: ['11 cards each from two 52-card decks', 'Draw one, meld 3+ of a rank, then discard', 'A canasta is 7 of a rank', 'First partnership to 5000 wins'] },
   },
 
   // ── Planned (betting) ──────────────────────────────────────────────────────
   {
     type: 'texas_holdem', family: 'betting', deck: {}, status: 'live',
-    config: { id: 'texas_holdem', name: 'Texas Hold\'em', tagline: 'Two cards, five community', emoji: '♠️', description: 'The world\'s most popular poker game.', minPlayers: 2, maxPlayers: 10, dealCount: 2, color: 'from-green-800/60 to-emerald-900/60', rules: ['Two hole cards each', 'Five community cards (flop, turn, river)', 'Betting rounds: pre-flop, flop, turn, river', 'Best 5-card hand wins the pot'] },
+    config: { id: 'texas_holdem', name: 'Texas Hold\'em', tagline: 'Two cards, five community', emoji: '♠️', description: 'The world\'s most popular poker game.', minPlayers: 2, maxPlayers: 10, dealCount: 2, color: 'from-green-800/60 to-emerald-900/60', rules: ['2 hole cards each', 'Five community cards (flop, turn, river)', 'On your turn: Check, Call, Raise, or Fold', 'Best 5-card hand wins the pot'] },
   },
   {
     type: 'five_card_draw', family: 'betting', deck: {}, status: 'live',
-    config: { id: 'five_card_draw', name: 'Five-Card Draw', tagline: 'The original poker', emoji: '🃏', description: 'Draw up to 5 new cards and bet your hand.', minPlayers: 2, maxPlayers: 6, dealCount: 5, color: 'from-emerald-900/60 to-green-900/60', rules: ['Five cards each', 'One draw round (swap up to 5)', 'Betting before and after the draw', 'Best hand wins'] },
+    config: { id: 'five_card_draw', name: 'Five-Card Draw', tagline: 'The original poker', emoji: '🃏', description: 'Draw up to 5 new cards and bet your hand.', minPlayers: 2, maxPlayers: 6, dealCount: 5, color: 'from-emerald-900/60 to-green-900/60', rules: ['5 cards each', 'Pick cards and tap Draw to swap them (or keep all)', 'Then tap Showdown to compare hands', 'Best hand wins the pot'] },
   },
   {
     type: 'baccarat', family: 'betting', deck: {}, status: 'live',
@@ -164,17 +171,17 @@ export const GAME_CATALOG: CatalogEntry[] = [
   },
   {
     type: 'spider', family: 'solo', deck: { copies: 2 }, status: 'live',
-    config: { id: 'spider', name: 'Spider Solitaire', tagline: 'Eight legs, ten columns', emoji: '🕷️', description: 'The two-deck patience — build suit sequences to clear the board.', minPlayers: 1, maxPlayers: 1, dealCount: 'all', color: 'from-neutral-800/60 to-stone-900/60', rules: ['Two decks, 10 tableau columns', 'Build down within a suit', 'Complete a K→A run to remove it', 'Clear all 8 suits to win'] },
+    config: { id: 'spider', name: 'Spider Solitaire', tagline: 'Eight legs, ten columns', emoji: '🕷️', description: 'The two-deck patience — build suit sequences to clear the board.', minPlayers: 1, maxPlayers: 1, dealCount: 'all', color: 'from-neutral-800/60 to-stone-900/60', rules: ['Two decks, 10 tableau columns', 'Build down within a suit', 'Deal a row from the stock when you need cards', 'Complete a K→A run to remove it; clear all 8 suits to win'] },
   },
 
   // ── Planned (unique) ───────────────────────────────────────────────────────
   {
     type: 'cribbage', family: 'unique', deck: {}, status: 'live',
-    config: { id: 'cribbage', name: 'Cribbage', tagline: 'Peg your way to 121', emoji: '🧮', description: 'The pegboard classic — count your hand, crib, and pegging.', minPlayers: 2, maxPlayers: 4, dealCount: 6, color: 'from-rose-900/60 to-red-900/60', rules: ['6 cards each (5 with 3 players)', 'Discard 2 to the crib', 'Peg to 31 in the play', 'Count hand + crib; first to 121 wins'] },
+    config: { id: 'cribbage', name: 'Cribbage', tagline: 'Peg your way to 121', emoji: '🧮', description: 'The pegboard classic — count your hand, crib, and pegging.', minPlayers: 2, maxPlayers: 4, dealCount: 6, color: 'from-rose-900/60 to-red-900/60', rules: ['6 cards each (5 with 3 players)', 'Discard 2 to the crib', 'Play cards and peg toward 31; tap Go if you cannot', 'Tap Count for the hand and crib; first to 121 wins'] },
   },
   {
     type: 'pinochle', family: 'unique', deck: { ranks: ['9', '10', 'J', 'Q', 'K', 'A'], copies: 2 }, status: 'live',
-    config: { id: 'pinochle', name: 'Pinochle', tagline: 'Meld and trick to win', emoji: '🏆', description: '48-card game combining melding and trick-taking with a unique scoring table.', minPlayers: 4, maxPlayers: 4, dealCount: 12, color: 'from-fuchsia-900/60 to-purple-900/60', rules: ['48-card deck (9–A, two of each)', 'Melds score points (marriages, pinochle)', 'Trick-taking with trump', 'First to 150 points wins'] },
+    config: { id: 'pinochle', name: 'Pinochle', tagline: 'Meld and trick to win', emoji: '🏆', description: '48-card game combining melding and trick-taking with a unique scoring table.', minPlayers: 4, maxPlayers: 4, dealCount: 12, color: 'from-fuchsia-900/60 to-purple-900/60', rules: ['12 cards each from a 48-card deck (9–A, two of each)', 'Meld marriages and pinochle for points', 'Play a card — follow trump and suit', 'First to 150 points wins'] },
   },
 
   // ── Implemented this drain (was documented-only) ──────────────────────────
@@ -196,11 +203,11 @@ export const GAME_CATALOG: CatalogEntry[] = [
   },
   {
     type: 'cassino', family: 'collecting', deck: {}, status: 'live',
-    config: { id: 'cassino', name: 'Cassino', tagline: 'Capture and build', emoji: '🎣', description: 'Fishing game — capture table cards by matching or summing.', minPlayers: 2, maxPlayers: 4, dealCount: 4, color: 'from-amber-900/60 to-yellow-900/60', rules: ['4 cards each, 4 on the table', 'Capture by matching or summing values', 'Build piles to capture later', 'Score cards, spades, aces, and the big cassino'] },
+    config: { id: 'cassino', name: 'Cassino', tagline: 'Capture and build', emoji: '🎣', description: 'Fishing game — capture table cards by matching or summing.', minPlayers: 2, maxPlayers: 4, dealCount: 4, color: 'from-amber-900/60 to-yellow-900/60', rules: ['4 cards each, 4 on the table', 'Capture by matching or summing, or take a build', 'Build piles, or trail a card onto the table if you cannot', 'Most cards, spades, aces, and the big cassino wins'] },
   },
   {
     type: 'kings_in_the_corner', family: 'shedding', deck: {}, status: 'live',
-    config: { id: 'kings_in_the_corner', name: 'Kings in the Corner', tagline: 'Lay it down', emoji: '👑', description: 'Solitaire-style race — build descending, alternating piles.', minPlayers: 2, maxPlayers: 6, dealCount: 7, color: 'from-stone-800/60 to-stone-900/60', rules: ['7 cards each', 'Build descending, alternating colors', 'Kings start new corner piles', 'First to empty their hand wins'] },
+    config: { id: 'kings_in_the_corner', name: 'Kings in the Corner', tagline: 'Lay it down', emoji: '👑', description: 'Solitaire-style race — build descending, alternating piles.', minPlayers: 2, maxPlayers: 6, dealCount: 7, color: 'from-stone-800/60 to-stone-900/60', rules: ['7 cards each', 'Draw, then play onto a corner or the center', 'Build descending, alternating colors; kings start corners', 'Discard to end your turn; first to empty their hand wins'] },
   },
   {
     type: 'speed', family: 'shedding', deck: {}, status: 'live',
@@ -224,11 +231,11 @@ export const GAME_CATALOG: CatalogEntry[] = [
   },
   {
     type: 'chase_the_ace', family: 'unique', deck: {}, status: 'live',
-    config: { id: 'chase_the_ace', name: 'Chase the Ace', tagline: 'Ditch the low card', emoji: '🎲', description: 'Pass-and-swap elimination — avoid holding the lowest card.', minPlayers: 3, maxPlayers: 8, dealCount: 1, color: 'from-orange-900/60 to-amber-900/60', rules: ['3 tokens each, one card', 'Swap with your neighbor to ditch lows', 'Lowest card loses a token', 'Last player standing wins'] },
+    config: { id: 'chase_the_ace', name: 'Chase the Ace', tagline: 'Ditch the low card', emoji: '🎲', description: 'Pass-and-swap elimination — avoid holding the lowest card.', minPlayers: 3, maxPlayers: 8, dealCount: 1, color: 'from-orange-900/60 to-amber-900/60', rules: ['3 tokens each, one card', 'Swap with your neighbor or Draw a new card from the stock', 'Lowest card loses a token', 'Last player standing wins'] },
   },
   {
     type: 'screw_your_neighbor', family: 'unique', deck: {}, status: 'live',
-    config: { id: 'screw_your_neighbor', name: 'Screw Your Neighbor', tagline: 'Kings are safe', emoji: '🔄', description: 'Swap cards to avoid the low — kings keep you safe.', minPlayers: 3, maxPlayers: 8, dealCount: 1, color: 'from-yellow-800/60 to-amber-900/60', rules: ['3 tokens each, one card', 'Swap unless you hold a king', 'Kings are revealed and safe', 'Lowest card loses a token; last player standing wins'] },
+    config: { id: 'screw_your_neighbor', name: 'Screw Your Neighbor', tagline: 'Kings are safe', emoji: '🔄', description: 'Swap cards to avoid the low — kings keep you safe.', minPlayers: 3, maxPlayers: 8, dealCount: 1, color: 'from-yellow-800/60 to-amber-900/60', rules: ['3 tokens each, one card', 'Swap unless you hold a king, or Draw from the stock', 'Kings are revealed and safe', 'Lowest card loses a token; last player standing wins'] },
   },
   {
     type: 'egyptian_ratscrew', family: 'compare', deck: {}, status: 'live',
@@ -236,7 +243,7 @@ export const GAME_CATALOG: CatalogEntry[] = [
   },
   {
     type: 'pitch', family: 'trick', deck: {}, status: 'live',
-    config: { id: 'pitch', name: 'Pitch', tagline: 'Bid the game points', emoji: '🎯', description: 'Bidding trick game — capture High, Low, Jack, and Game.', minPlayers: 2, maxPlayers: 7, dealCount: 6, color: 'from-lime-900/60 to-green-900/60', rules: ['6 cards each', 'Bid on the four game points', 'Highest bidder names trump', 'Capture High, Low, Jack, and Game to score'] },
+    config: { id: 'pitch', name: 'Pitch', tagline: 'Bid the game points', emoji: '🎯', description: 'Bidding trick game — capture High, Low, Jack, and Game.', minPlayers: 2, maxPlayers: 7, dealCount: 6, color: 'from-lime-900/60 to-green-900/60', rules: ['6 cards each', 'Bid on High, Low, Jack, and Game', 'Highest bidder names trump', 'Play a card — follow suit; capture those points to score'] },
   },
   {
     type: 'solitaire_race',
@@ -247,7 +254,7 @@ export const GAME_CATALOG: CatalogEntry[] = [
       id: 'solitaire_race', name: 'Solitaire Race', tagline: 'Same deck, fastest finish wins', emoji: '🏁',
       description: 'Both players get the identical Klondike deal and race to build all four foundations first.',
       minPlayers: 1, maxPlayers: 2, dealCount: 'all', color: 'from-cyan-900/60 to-blue-900/60',
-      rules: ['Both players get the same shuffled deck', 'Play your own Klondike tableau independently', 'Build all four foundations A→K to win', 'First to finish wins the race', 'Play solo to just beat the deck'],
+      rules: ['Both players get the same shuffled deck', 'Play your own Klondike tableau independently', 'Draw from the stock when you need a card', 'Build all four foundations A→K; first to finish wins'],
     },
   },
 ];

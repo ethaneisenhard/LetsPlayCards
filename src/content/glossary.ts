@@ -50,10 +50,11 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     metaDescription: "Learn how to play Go Fish, the classic family card game. Full rules for asking, drawing, and scoring books of four.",
     intro: 'Go Fish is a friendly matching game where players ask each other for cards to build sets of four. It is one of the first card games most people learn.',
     sections: [
-      { heading: 'Setup', body: 'Deal 5 cards to each player (7 cards with 2–3 players). The rest of the deck sits face-down in the middle as the draw pile.' },
-      { heading: 'How to Play', body: 'On your turn, ask any other player for a specific rank you already hold (e.g. "Do you have any kings?"). If they do, they must hand over every card of that rank and you go again.' },
-      { heading: 'Going Fish', body: 'If the player you asked does not have the rank, they say "Go Fish!" and you draw one card from the pile. If you draw the rank you asked for, show it and go again; otherwise your turn ends.' },
-      { heading: 'Scoring', body: 'Whenever you collect all four cards of a rank, lay them face-up as a "book." The player with the most books when the draw pile runs out wins.' },
+      { heading: 'Setup', body: 'Deal 7 cards each with 2–3 players, or 5 cards each with 4 or more. The rest of the deck is the draw pile.' },
+      { heading: 'How to Play', body: 'On your turn, pick a rank you hold and ask Anyone or a named seat. If they have that rank, they give you every matching card and you ask again.' },
+      { heading: 'Going Fish', body: 'If they have none, they say Go Fish. You draw one card from the pile and your turn ends.' },
+      { heading: 'Scoring', body: 'Four cards of a rank is a book (one point). Most books wins when the draw pile and every hand are empty.' },
+      { heading: 'Winning', body: 'Most books when the deck and every hand are empty.' },
     ],
     faq: [
       { q: 'How many cards do you deal in Go Fish?', a: '5 cards per player for 4+ players, or 7 cards each for 2–3 players.' },
@@ -308,7 +309,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     intro: 'Canasta is a partnership melding game played with two decks and the jokers. Teams race to complete "canastas" — seven cards of the same rank.',
     sections: [
       { heading: 'Setup', body: 'Two 52-card decks plus jokers, four players in two partnerships, 11 cards each. Wild cards are the jokers and the twos.' },
-      { heading: 'How to Play', body: 'Draw two cards, meld sets of three or more of a rank (7+ with wilds is a "canasta"), and discard. You may pick up the discard pile if you can immediately meld its top card.' },
+      { heading: 'How to Play', body: 'Draw one card, meld sets of three or more of a rank (7 of a rank is a canasta), and discard. You may pick up the discard pile if you can immediately meld its top card.' },
       { heading: 'Freezing', body: 'A discard pile with a wild or a 3 on top is "frozen" — it can only be taken with a natural pair in hand, which protects it.' },
       { heading: 'Scoring', body: 'Natural canasta 500, mixed 300, red 3s 100 each. First team to 5000 wins. Going out requires at least one canasta.' },
     ],
@@ -318,7 +319,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       { q: 'What does freezing the pile mean?', a: 'Discarding a wild card or a red 3 freezes the pile so opponents can only take it with a natural pair of the top rank.' },
     ],
     related: ['rummy', 'rummy_500', 'gin_rummy'],
-    difficulty: 4, timeMinutes: '1–2 hrs', playerCount: '2–6', status: 'live',
+    difficulty: 4, timeMinutes: '1–2 hrs', playerCount: '4', status: 'live',
   },
 
   // ── Betting (planned) ─────────────────────────────────────────────────────
