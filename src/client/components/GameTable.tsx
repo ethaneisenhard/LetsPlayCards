@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionPillBar } from './ActionPillBar';
 import { BattleLane } from './BattleLane';
 import { CenterPile } from './CenterPile';
@@ -22,22 +22,22 @@ import { resolveFeltActions } from '../lib/felt-actions-pure';
 import {
   DEAL_SKIP_AFTER_MS,
   STOCK_ANCHOR,
-  boardFlights,
-  collectSurfaceReady,
-  dealFlights,
-  dealSurfaceReady,
-  holdLaneCards,
   inferCollectFallback,
   inferCollectWinner,
-  leavingBoardCards,
   originAnchor,
-  playerIdFromAnchor,
   shouldAnimateDeal,
-  type CardFlightPlan,
   type CollectSignals,
-  type LaneSnapshot,
 } from '../lib/card-flight-pure';
-import { centerBattleSlots, centerPileCards, hasSharedCenterPile, labeledCenterRows, laneSnapshotFromState } from '../lib/center-projection-pure';
+import {
+  animView,
+  createIdleAnimState,
+  emptyPresented,
+  eventFromEngine,
+  makeTableBoard,
+  reduceAnim,
+} from '../lib/table-anim-machine-pure';
+import { reservedBattleSlots } from '../lib/battle-lane-pure';
+import { centerPileCards, hasSharedCenterPile, labeledCenterRows, laneSnapshotFromState } from '../lib/center-projection-pure';
 import { useChrome } from '../lib/chrome';
 import { resolveActorId, resolveIsMyTurn } from '../lib/felt-turn-pure';
 import {
@@ -454,21 +454,11 @@ export function GameTable({
   function handleDrawDiscard() {
     trySend({ intent: 'draw', source: 'discard' });
   }
-  const snap = laneSnapshotFromState(gs);
-  const liveSlots = centerBattleSlots(players, gs);
-  const centerCards = centerPileCards(gs);
+  const engineLanes = laneSnapshotFromState(gs);
+  const engineCenter = centerPileCards(gs);
   const showCenterPile = hasSharedCenterPile(gs) && !chrome.showCorners && !chrome.showFishing;
-  const canSlap = Boolean(chrome.slapIntent) && !busy && centerCards.length > 0;
   const flipNeedsTurn = chrome.stockIntent !== 'war-play';
   const stockDisabled = busy || player.handCount === 0 || (flipNeedsTurn && !isMyTurn);
-  const [heldWinner, setHeldWinner] = useState<string | null>(null);
-  const cardsOnLane = liveSlots.some((s) => s.cards.length > 0);
-  useEffect(() => {
-    if (gs.roundWinnerId) setHeldWinner(gs.roundWinnerId);
-    if (cardsOnLane || busy) return;
-    const t = setTimeout(() => setHeldWinner(null), 560);
-    return () => clearTimeout(t);
-  }, [gs.roundWinnerId, cardsOnLane, busy]);
 
   // Multiplayer War: winner settles after a hold so both cards can sit, shake, then fly home.
   // Solo matches already settle via the bot loop (`canAct` is set).
@@ -516,286 +506,88 @@ export function GameTable({
       players,
     ],
   );
-  const snapStamp = `${liveSlots.map((s) => `${s.playerId}:${s.cards.map((c) => c.id).join(',')}`).join('|')}#${centerCards.map((c) => c.id).join(',')}`;
-  const prevSnap = useRef(snap);
-  const prevCenter = useRef(centerCards);
-  const prevSignals = useRef(collectSignals);
-  const prevType = useRef(game.gameType);
-  const [flights, setFlights] = useState<CardFlightPlan[]>([]);
-  const [heldLanes, setHeldLanes] = useState<LaneSnapshot>({});
-  const [heldCenter, setHeldCenter] = useState<Card[]>([]);
-  const [startedFlightKeys, setStartedFlightKeys] = useState<Set<string>>(() => new Set());
-  const [collectHiddenCounts, setCollectHiddenCounts] = useState<Record<string, number>>({});
-  const [pendingCollect, setPendingCollect] = useState<CardFlightPlan[]>([]);
-  const [collectTick, setCollectTick] = useState(0);
-  const [dealPhase, setDealPhase] = useState<'pending' | 'flying' | 'done'>('pending');
-  const [dealHiddenIds, setDealHiddenIds] = useState<Set<string>>(() => new Set());
-  const [dealHiddenCounts, setDealHiddenCounts] = useState<Record<string, number>>({});
-  const [anchorsReady, setAnchorsReady] = useState(false);
-  const dealtKey = useRef<string | null>(null);
-  const dealStarted = useRef(false);
-  const dealKey = `${game.id}:${game.gameType}:${players.map((p) => p.id).join(',')}`;
-  useLayoutEffect(() => {
-    const id = requestAnimationFrame(() => setAnchorsReady(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-  useEffect(() => {
-    if (prevType.current !== game.gameType) {
-      prevType.current = game.gameType;
-      prevSnap.current = snap;
-      prevCenter.current = centerCards;
-      prevSignals.current = collectSignals;
-      setFlights([]);
-      setHeldLanes({});
-      setHeldCenter([]);
-      setCollectHiddenCounts({});
-      setStartedFlightKeys(new Set());
-      setPendingCollect([]);
-      return;
-    }
-    const reducedMotion =
-      typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const winnerId =
-      inferCollectWinner(players, prevSignals.current, collectSignals) ??
-      gs.roundWinnerId ??
-      heldWinner;
-    const fallback = inferCollectFallback(prevSignals.current, collectSignals);
-    const leaving = leavingBoardCards(prevSnap.current, snap, prevCenter.current, centerCards);
-    const planned = boardFlights({
-      prevLanes: prevSnap.current,
-      nextLanes: snap,
-      prevCenter: prevCenter.current,
-      nextCenter: centerCards,
-      winnerId,
-      fallback,
-      reducedMotion,
-    });
-    if (leaving.length && !reducedMotion) {
-      setHeldLanes(prevSnap.current);
-      setHeldCenter(prevCenter.current);
-    }
-    prevSnap.current = snap;
-    prevCenter.current = centerCards;
-    prevSignals.current = collectSignals;
-    if (!planned.length) return;
-    const plays = planned.filter((f) => f.kind !== 'collect');
-    const collects = planned.filter((f) => f.kind === 'collect');
-    if (plays.length) {
-      setFlights((cur) => {
-        const have = new Set(cur.map((f) => f.key));
-        const add = plays.filter((f) => !have.has(f.key));
-        return add.length ? [...cur, ...add] : cur;
-      });
-    }
-    if (collects.length) {
-      setPendingCollect((cur) => {
-        const have = new Set(cur.map((f) => f.key));
-        const add = collects.filter((f) => !have.has(f.key));
-        return add.length ? [...cur, ...add] : cur;
-      });
-      setCollectTick(0);
-    }
-  }, [snapStamp, game.gameType, gs.roundWinnerId, heldWinner, collectSignals, centerCards, players, snap]);
-  const enqueueCollect = useCallback(
-    (add: CardFlightPlan[]) => {
-      if (!add.length) return;
-      setFlights((cur) => {
-        const have = new Set(cur.map((f) => f.key));
-        const next = add.filter((f) => !have.has(f.key));
-        return next.length ? [...cur, ...next] : cur;
-      });
-      const incoming = add.reduce<Record<string, number>>((acc, f) => {
-        const id = playerIdFromAnchor(f.toAnchor);
-        if (players.some((p) => p.id === id)) acc[id] = (acc[id] ?? 0) + 1;
-        return acc;
-      }, {});
-      if (Object.keys(incoming).length) {
-        setCollectHiddenCounts((counts) => {
-          const next = { ...counts };
-          for (const [id, n] of Object.entries(incoming)) next[id] = (next[id] ?? 0) + n;
-          return next;
-        });
-      }
-    },
-    [players],
+  const engineBoard = useMemo(
+    () =>
+      makeTableBoard({
+        lanes: engineLanes,
+        center: engineCenter,
+        handCounts: Object.fromEntries(players.map((p) => [p.id, p.handCount])),
+        viewerHand: player.hand,
+        viewerId: player.id,
+      }),
+    [engineLanes, engineCenter, players, player.hand, player.id],
   );
-  useEffect(() => {
-    if (pendingCollect.length === 0) return;
-    const present = Array.from(document.querySelectorAll('[data-card-anchor]')).map(
-      (el) => el.getAttribute('data-card-anchor') ?? '',
-    );
-    const dest = pendingCollect[0]?.toAnchor ?? STOCK_ANCHOR;
-    const leaving = pendingCollect.map((f) => ({ card: f.card, fromAnchor: f.fromAnchor }));
-    const have = new Set(present);
-    const allReady = collectSurfaceReady(present, leaving, dest);
-    const ready = allReady
-      ? pendingCollect
-      : pendingCollect.filter((f) => have.has(f.fromAnchor) && have.has(f.toAnchor));
-    const wait = allReady ? [] : pendingCollect.filter((f) => !have.has(f.fromAnchor) || !have.has(f.toAnchor));
-    if (ready.length) enqueueCollect(ready);
-    if (wait.length && collectTick <= 16) {
-      if (ready.length) setPendingCollect(wait);
-      const id = requestAnimationFrame(() => setCollectTick((n) => n + 1));
-      return () => cancelAnimationFrame(id);
-    }
-    if (wait.length) {
-      const gone = new Set(wait.map((f) => f.card.id));
-      setHeldLanes((cur) =>
-        Object.fromEntries(Object.entries(cur).map(([id, cards]) => [id, cards.filter((c) => !gone.has(c.id))])),
-      );
-      setHeldCenter((cur) => cur.filter((c) => !gone.has(c.id)));
-    }
-    setPendingCollect([]);
-    setCollectTick(0);
-  }, [pendingCollect, collectTick, enqueueCollect]);
-  const finishDeal = useCallback(() => {
-    setFlights((cur) => cur.filter((f) => f.kind !== 'deal'));
-    setDealHiddenIds(new Set());
-    setDealHiddenCounts({});
-    setDealPhase('done');
-    dealStarted.current = false;
+  const dealKey = `${game.id}:${game.gameType}:${players.map((p) => p.id).join(',')}`;
+  const prevSignals = useRef(collectSignals);
+  const collectWinner =
+    inferCollectWinner(players, prevSignals.current, collectSignals) ?? gs.roundWinnerId ?? null;
+  const collectFallback = inferCollectFallback(prevSignals.current, collectSignals);
+  const reducedMotion =
+    typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const shouldDeal = shouldAnimateDeal({
+    showTableau: chrome.showTableau,
+    showMemory: chrome.showMemory,
+    seatCounts: players.map((p) => p.handCount),
+    reducedMotion: false,
+  });
+  const [anim, setAnim] = useState(() => createIdleAnimState(emptyPresented(engineBoard)));
+  const engineEvent = eventFromEngine(anim, engineBoard, {
+    dealKey,
+    shouldDeal,
+    reducedMotion,
+    winnerId: collectWinner,
+    fallback: collectFallback,
+  });
+  const presentedAnim = engineEvent ? reduceAnim(anim, engineEvent) : anim;
+  if (engineEvent) setAnim(presentedAnim);
+  prevSignals.current = collectSignals;
+  const view = animView(presentedAnim);
+  const boardRef = useRef(engineBoard);
+  boardRef.current = engineBoard;
+  const skipAnim = useCallback(() => {
+    setAnim((s) => reduceAnim(s, { type: 'skip', board: boardRef.current }));
   }, []);
-  skipDealRef.current = finishDeal;
+  skipDealRef.current = skipAnim;
   const onFlightStart = useCallback((key: string) => {
-    setStartedFlightKeys((cur) => {
-      if (cur.has(key)) return cur;
-      const next = new Set(cur);
-      next.add(key);
-      return next;
-    });
+    setAnim((s) => reduceAnim(s, { type: 'flightStarted', key }));
   }, []);
   const onFlightDone = useCallback((key: string) => {
-    setStartedFlightKeys((cur) => {
-      if (!cur.has(key)) return cur;
-      const next = new Set(cur);
-      next.delete(key);
-      return next;
-    });
-    setFlights((cur) => {
-      const flight = cur.find((f) => f.key === key);
-      const next = cur.filter((f) => f.key !== key);
-      if (key.startsWith('deal:')) {
-        const parts = key.split(':');
-        const seatId = parts[1];
-        const card = flight?.card;
-        if (card && !card.id.startsWith('deal-back-')) {
-          setDealHiddenIds((ids) => {
-            const copy = new Set(ids);
-            copy.delete(card.id);
-            return copy;
-          });
-        }
-        if (seatId) {
-          setDealHiddenCounts((counts) => ({
-            ...counts,
-            [seatId]: Math.max(0, (counts[seatId] ?? 1) - 1),
-          }));
-        }
-      }
-      if (flight?.kind === 'collect') {
-        const destId = playerIdFromAnchor(flight.toAnchor);
-        setCollectHiddenCounts((counts) => ({
-          ...counts,
-          [destId]: Math.max(0, (counts[destId] ?? 1) - 1),
-        }));
-        const gone = flight.card.id;
-        setHeldLanes((lanes) =>
-          Object.fromEntries(
-            Object.entries(lanes).map(([id, cards]) => [id, cards.filter((c) => c.id !== gone)]),
-          ),
-        );
-        setHeldCenter((cards) => cards.filter((c) => c.id !== gone));
-      }
-      return next;
-    });
+    setAnim((s) => reduceAnim(s, { type: 'flightLanded', key }));
   }, []);
-  const [dealTick, setDealTick] = useState(0);
   useEffect(() => {
-    if (!anchorsReady || dealtKey.current === dealKey) return;
-    const seats = players.map((p) => ({
-      playerId: p.id,
-      count: p.handCount,
-      cards: p.id === player.id && p.hand.length > 0 ? p.hand : undefined,
-    }));
-    const reducedMotion =
-      typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (
-      !shouldAnimateDeal({
-        showTableau: chrome.showTableau,
-        showMemory: chrome.showMemory,
-        seatCounts: seats.map((s) => s.count),
-        reducedMotion,
-      })
-    ) {
-      dealtKey.current = dealKey;
-      setDealPhase('done');
-      return;
-    }
-    const present = Array.from(document.querySelectorAll('[data-card-anchor]')).map(
-      (el) => el.getAttribute('data-card-anchor') ?? '',
-    );
-    if (!dealSurfaceReady(present, players.map((p) => p.id))) {
-      if (dealTick > 16) {
-        dealtKey.current = dealKey;
-        setDealPhase('done');
-        return;
-      }
-      const id = requestAnimationFrame(() => setDealTick((n) => n + 1));
-      return () => cancelAnimationFrame(id);
-    }
-    const planned = dealFlights(seats);
-    dealtKey.current = dealKey;
-    dealStarted.current = true;
-    setDealHiddenIds(new Set(player.hand.map((c) => c.id)));
-    setDealHiddenCounts(
-      Object.fromEntries(
-        seats.map((s) => [s.playerId, planned.filter((f) => f.toAnchor === originAnchor(s.playerId)).length]),
-      ),
-    );
-    setDealPhase('flying');
-    setFlights((cur) => [...cur, ...planned]);
-  }, [anchorsReady, dealTick, dealKey, chrome.showMemory, chrome.showTableau, player.hand, player.id, players]);
-  useEffect(() => {
-    if (!dealStarted.current || dealPhase !== 'flying') return;
-    if (!flights.some((f) => f.kind === 'deal')) {
-      finishDeal();
-    }
-  }, [dealPhase, flights, finishDeal]);
-  useEffect(() => {
-    if (dealPhase !== 'flying') return;
-    const t = setTimeout(finishDeal, DEAL_SKIP_AFTER_MS);
+    if (presentedAnim.phase !== 'dealing') return;
+    const t = setTimeout(() => {
+      setAnim((s) => reduceAnim(s, { type: 'skip', board: boardRef.current }));
+    }, DEAL_SKIP_AFTER_MS);
     return () => clearTimeout(t);
-  }, [dealPhase, finishDeal]);
-  const hiddenCardIds = new Set(
-    flights
-      .filter((f) => f.kind === 'play' || (f.kind === 'collect' && startedFlightKeys.has(f.key)))
-      .map((f) => f.card.id),
-  );
-  const battleSlots = holdLaneCards(liveSlots, heldLanes);
-  const displayCenter = centerCards.length > 0 ? centerCards : heldCenter;
+  }, [presentedAnim.phase]);
+
+  const hiddenCardIds = view.hiddenCardIds;
+  const battleSlots = reservedBattleSlots(players, view.lanes);
+  const displayCenter = view.center;
   const showBattle =
     !showCenterPile &&
     (chrome.reserveBattleLane ||
-      liveSlots.some((s) => s.cards.length > 0) ||
-      Object.values(heldLanes).some((cards) => cards.length > 0));
-  const shownHand =
-    dealPhase === 'done'
-      ? player.hand
-      : dealPhase === 'pending'
-        ? []
-        : player.hand.filter((c) => !dealHiddenIds.has(c.id));
-  const shownCount = (id: string, actual: number) => {
-    const afterDeal =
-      dealPhase === 'done'
-        ? actual
-        : dealPhase === 'pending'
-          ? 0
-          : Math.max(0, actual - (dealHiddenCounts[id] ?? 0));
-    return Math.max(0, afterDeal - (collectHiddenCounts[id] ?? 0));
-  };
-  const dealing = dealPhase !== 'done';
+      Object.values(view.lanes).some((cards) => cards.length > 0) ||
+      view.phase === 'holding' ||
+      view.phase === 'collecting' ||
+      view.phase === 'playing');
+  const shownHand = view.viewerHand;
+  const shownCount = (id: string, _actual?: number) => view.handCounts[id] ?? 0;
+  const dealing = view.phase === 'dealing';
+  const canSlap =
+    Boolean(chrome.slapIntent) &&
+    !busy &&
+    view.center.length > 0 &&
+    view.phase !== 'collecting' &&
+    view.phase !== 'dealing';
   const showFeltStock = chrome.showSharedPiles || (dealing && !chrome.showTableau && !chrome.showMemory);
-  const revealWinnerId = gs.phase === 'reveal' ? (gs.roundWinnerId ?? null) : null;
+  const revealWinnerId =
+    view.phase === 'holding' || view.phase === 'collecting'
+      ? presentedAnim.winnerId
+      : gs.phase === 'reveal'
+        ? (gs.roundWinnerId ?? null)
+        : null;
   const winnerName = revealWinnerId
     ? (players.find((p) => p.id === revealWinnerId)?.name ?? 'Winner')
     : null;
@@ -921,7 +713,7 @@ export function GameTable({
           : strip.line
       }
       tone={strip.tone}
-      skipDeal={dealing ? finishDeal : undefined}
+      skipDeal={dealing ? skipAnim : undefined}
     />
   );
   const pillBar = () => <ActionPillBar bar={actionBar} onPill={handlePill} />;
@@ -1411,7 +1203,7 @@ export function GameTable({
           )}
         </div>
       </div>
-      <CardFlightLayer flights={flights} onFlightStart={onFlightStart} onFlightDone={onFlightDone} />
+      <CardFlightLayer flights={view.activeFlights} onFlightStart={onFlightStart} onFlightDone={onFlightDone} />
     </div>
   );
 }
