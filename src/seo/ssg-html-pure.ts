@@ -31,11 +31,12 @@ footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.0
 .hub .intro{color:#a7b0bf;max-width:640px}
 .fam{margin:48px 0}
 .fam h2{font-size:1.5rem}
-.gamelist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:16px}
-.gamelist a{display:block;padding:16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#e6e9ef;text-decoration:none}
-.gamelist a:hover{border-color:#c9a84c}
-.gamelist .n{font-weight:700;font-size:1.02rem}
-.gamelist .d{font-size:12px;color:#8b93a1;margin-top:3px}
+.gamelist{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:14px;margin-top:16px}
+.gamelist a{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:18px 18px 16px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#e6e9ef;text-decoration:none;min-height:7.5rem}
+.gamelist a:hover{border-color:#c9a84c;text-decoration:none}
+.gamelist .n{display:block;font-weight:700;font-size:1.12rem;line-height:1.25;color:#fff}
+.gamelist .d{display:block;font-size:.92rem;line-height:1.45;color:#8b93a1;margin-top:8px}
+.gamelist a::after{content:"Play";display:block;margin-top:auto;padding-top:12px;font-size:12px;font-weight:600;letter-spacing:.04em;color:#c9a84c}
 .live{display:inline-block;font-size:10px;color:#34d399;border:1px solid rgba(52,211,153,.4);padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
 .history-banner{display:block;margin:28px 0 8px;padding:18px 20px;border-radius:14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.28);color:#e6e9ef;text-decoration:none}
 .history-banner:hover{border-color:#c9a84c;text-decoration:none}
@@ -77,6 +78,8 @@ footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.0
   .hub h1{font-size:2.05rem}
   .lead{font-size:1.05rem}
   .play{padding:18px 16px}
+  .gamelist{grid-template-columns:1fr;gap:12px}
+  .gamelist a{padding:18px 16px;min-height:0}
 }
 `;
 

@@ -98,7 +98,7 @@ export function renderHistoryPage(baseUrl = SITE_ORIGIN): string {
   const plays = HISTORY_PAGE.playLinks
     .map(
       (g) =>
-        `<a href="/games/${esc(g.slug)}/"><span class="n">${esc(g.name)}</span><span class="d">${esc(g.tease)}</span></a>`,
+        `<a href="/games/${esc(g.slug)}/"><span class="n">${esc(g.name)}</span>\n<span class="d">${esc(g.tease)}</span></a>`,
     )
     .join('\n');
 

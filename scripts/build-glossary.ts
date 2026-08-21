@@ -140,7 +140,7 @@ function renderIndex(): string {
       const label = FAMILY_LABEL[family] ?? 'More Card Games';
       const items = entries
         .map(
-          (e) => `<a href="/games/${e.slug}/"><span class="n">${esc(e.name)}${e.status === 'live' ? '<span class="live">LIVE</span>' : ''}</span><span class="d">${esc(e.playerCount)} · ${esc(e.timeMinutes)}</span></a>`,
+          (e) => `<a href="/games/${e.slug}/"><span class="n">${esc(e.name)}${e.status === 'live' ? '<span class="live">LIVE</span>' : ''}</span>\n<span class="d">${esc(e.playerCount)} · ${esc(e.timeMinutes)}</span></a>`,
         )
         .join('\n');
       return `<div class="fam"><h2>${esc(label)}</h2><div class="gamelist">${items}</div></div>`;

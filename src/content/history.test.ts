@@ -114,7 +114,9 @@ describe('renderHistoryPage', () => {
   });
 
   it('shows real historic cards in the marks section, not a drawing', () => {
-    expect(HISTORY_ASSET_VERSION).toBe('cards1');
+    expect(HISTORY_ASSET_VERSION).toBe('tiles1');
+    expect(html).toMatch(/\.gamelist \.n\{display:block/);
+    expect(html).toMatch(/\.gamelist \.d\{display:block/);
     expect(html).toContain('class="marks-grid"');
     for (const fig of HISTORY_MARKS.figures) {
       expect(fig.kind).toBe('photo');
