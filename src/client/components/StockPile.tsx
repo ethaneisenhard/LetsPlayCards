@@ -63,6 +63,11 @@ export function StockPile({
     <div className="flex flex-col items-center gap-2.5">
       {name && <span className="text-white/70 text-xs font-medium truncate max-w-[5rem]">{name}</span>}
       {pile}
+      {actionLabel && (
+        <span className={`text-[9px] max-w-[5.5rem] text-center leading-tight ${disabled ? 'text-white/30' : 'text-gold/70'}`}>
+          {actionLabel}
+        </span>
+      )}
     </div>
   );
 }

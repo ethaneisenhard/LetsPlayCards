@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AskActionPanel } from './AskActionPanel';
 import { BattleLane } from './BattleLane';
 import { CenterPile } from './CenterPile';
 import { CardFlightLayer } from './CardFlightLayer';
@@ -25,6 +26,18 @@ import {
 import { centerBattleSlots, centerPileCards, hasSharedCenterPile, labeledCenterRows, laneSnapshotFromState } from '../lib/center-projection-pure';
 import { useChrome } from '../lib/chrome';
 import { resolveActorId, resolveIsMyTurn } from '../lib/felt-turn-pure';
+import {
+  ANYONE_TARGET_ID,
+  askButtonLabel,
+  askTurnHint,
+  drawButtonLabel,
+  drawTurnHint,
+  isAnyoneChoice,
+  legalAskTargets,
+  ranksHeld,
+  resolveAskTargetId,
+  seatActionLabel,
+} from '../lib/ask-action-pure';
 import { bookCounts, bookScoreLine, lastAskLine } from '../lib/last-ask-pure';
 import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { suitLaddersFromPlayed } from '../lib/suit-ladder-pure';
@@ -94,6 +107,8 @@ export function GameTable({
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [targetIds, setTargetIds] = useState<string[]>([]);
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
+  const [askRank, setAskRank] = useState<string | null>(null);
+  const [askWho, setAskWho] = useState<string>(ANYONE_TARGET_ID);
   const { setActiveGameType } = useChrome();
   const theme = useMemo(
     () => resolveSurface(game.gameType, config.tableTheme),
@@ -220,7 +235,12 @@ export function GameTable({
   const currentTurnPlayer = actorId
     ? players.find((p) => p.id === actorId)
     : players.find((p) => p.seat === game.currentSeat);
-  const pickedRank = player.hand.find((c) => c.id === pickedCardId)?.rank ?? null;
+  const rankFromCard = player.hand.find((c) => c.id === pickedCardId)?.rank ?? null;
+  const pickedRank = rankFromCard ?? askRank;
+  const heldRanks = ranksHeld(player.hand);
+  const askOpponents = legalAskTargets(opponents);
+  const resolvedAskTargetId = resolveAskTargetId(askWho, opponents);
+  const resolvedAskTarget = askOpponents.find((o) => o.id === resolvedAskTargetId) ?? null;
   const books = bookCounts(gs.books);
   const askLine = lastAskLine(gs.lastAsk);
   const scoreLine = bookScoreLine(books, players);
@@ -274,6 +294,23 @@ export function GameTable({
       return;
     }
     setPickedCardId((id) => (id === card.id ? null : card.id));
+    if (chrome.askRankIntent) {
+      setAskRank(pickedCardId === card.id ? null : card.rank);
+    }
+  }
+  function handleAskRank(rank: string) {
+    setAskRank((cur) => (cur === rank ? null : rank));
+    const card = player.hand.find((c) => c.rank === rank);
+    setPickedCardId((id) => (askRank === rank ? null : card?.id ?? id));
+  }
+  function submitAsk(who = askWho) {
+    if (!chrome.askRankIntent || !pickedRank) return;
+    const targetId = resolveAskTargetId(who, opponents);
+    if (!targetId) return;
+    trySend({ intent: chrome.askRankIntent, rank: pickedRank, targetId });
+    setPickedCardId(null);
+    setAskRank(null);
+    setAskWho(ANYONE_TARGET_ID);
   }
   const canPickHand = Boolean(
     chrome.askRankIntent ||
@@ -286,9 +323,8 @@ export function GameTable({
 
   function handleTarget(targetId: string) {
     if (chrome.askRankIntent) {
-      if (!pickedRank) return;
-      trySend({ intent: chrome.askRankIntent, rank: pickedRank, targetId });
-      setPickedCardId(null);
+      setAskWho(targetId);
+      if (pickedRank) submitAsk(targetId);
       return;
     }
     handleDrawFrom(targetId);
@@ -296,7 +332,7 @@ export function GameTable({
   function canTarget(opp: PlayerView): boolean {
     if (busy || !isMyTurn || opp.handCount === 0) return false;
     if (chrome.askRankIntent) {
-      if (!pickedRank) return false;
+      if (!pickedRank) return true;
       return !canAct || canAct({ intent: chrome.askRankIntent, rank: pickedRank, targetId: opp.id });
     }
     if (chrome.drawFromIntent) {
@@ -306,12 +342,42 @@ export function GameTable({
     return false;
   }
   const seatTarget = Boolean(chrome.drawFromIntent || chrome.askRankIntent);
+  const askSubmitLabel = chrome.askRankIntent
+    ? askButtonLabel(pickedRank, resolvedAskTarget?.name ?? null, isAnyoneChoice(askWho))
+    : drawButtonLabel(resolvedAskTarget?.name ?? askOpponents[0]?.name ?? null);
+  const askSubmitReady = chrome.askRankIntent
+    ? Boolean(
+        pickedRank &&
+          resolvedAskTargetId &&
+          (!canAct || canAct({ intent: chrome.askRankIntent, rank: pickedRank, targetId: resolvedAskTargetId })),
+      )
+    : Boolean(
+        resolvedAskTargetId &&
+          (!canAct || canAct({ intent: chrome.drawFromIntent!, targetId: resolvedAskTargetId })),
+      );
+  const showTalkPanel = Boolean(
+    askLine ||
+      scoreLine ||
+      extraRows.length > 0 ||
+      chrome.turnButtons.length > 0 ||
+      ladders.length > 0 ||
+      hole ||
+      chrome.widowSwap ||
+      chrome.showCorners ||
+      chrome.showFishing ||
+      chrome.showPeg ||
+      chrome.askRankIntent ||
+      chrome.drawFromIntent,
+  );
+  const askPanelOpen = Boolean((chrome.askRankIntent || chrome.drawFromIntent) && isMyTurn && !busy);
 
   useEffect(() => {
     setPickedCardId(null);
     setPickedIds([]);
     setTargetIds([]);
     setSelectedBuildId(null);
+    setAskRank(null);
+    setAskWho(ANYONE_TARGET_ID);
   }, [game.currentSeat, game.gameType, player.id, actorId]);
   const canDraw =
     felt.allowDraw &&
@@ -387,6 +453,42 @@ export function GameTable({
     : null;
 
   const stock = chrome.handReveal === 'stock';
+  const askControls = askPanelOpen ? (
+    <AskActionPanel
+      title={chrome.askRankIntent ? 'Ask' : 'Draw'}
+      hint={
+        chrome.askRankIntent
+          ? 'Choose a rank you hold, then who — a seat or anyone at the table.'
+          : 'Choose a player and draw a card from their hand.'
+      }
+      ranks={chrome.askRankIntent ? heldRanks : undefined}
+      selectedRank={pickedRank}
+      onSelectRank={chrome.askRankIntent ? handleAskRank : undefined}
+      targets={askOpponents.map((o) => ({ id: o.id, name: o.name }))}
+      selectedTargetId={
+        chrome.drawFromIntent && isAnyoneChoice(askWho)
+          ? (askOpponents[0]?.id ?? askWho)
+          : askWho
+      }
+      onSelectTarget={(id) => {
+        setAskWho(id);
+        if (chrome.askRankIntent && pickedRank) submitAsk(id);
+        else if (chrome.drawFromIntent) {
+          const targetId = resolveAskTargetId(id, opponents);
+          if (targetId) handleDrawFrom(targetId);
+        }
+      }}
+      includeAnyone={Boolean(chrome.askRankIntent)}
+      anyoneName={askOpponents[0]?.name}
+      disabled={busy || !isMyTurn}
+      submitLabel={askSubmitLabel}
+      submitDisabled={!askSubmitReady}
+      onSubmit={() => {
+        if (chrome.askRankIntent) submitAsk();
+        else if (resolvedAskTargetId) handleDrawFrom(resolvedAskTargetId);
+      }}
+    />
+  ) : null;
 
   return (
     <div className="flex flex-col w-full h-full min-h-0 select-none" style={{ background: theme.pageBg }}>
@@ -432,11 +534,9 @@ export function GameTable({
                 : `● ${winnerName} won — collecting…`
               : isMyTurn
               ? chrome.drawFromIntent
-                ? '● Your turn · click a player to draw'
+                ? drawTurnHint()
                 : chrome.askRankIntent
-                  ? pickedRank
-                    ? `● Ask someone for ${pickedRank}s`
-                    : '● Your turn · pick a rank, then a player'
+                  ? askTurnHint(pickedRank)
                   : chrome.turnButtons.length > 0
                     ? '● Your turn · Hit or Stand'
                     : '● Your turn'
@@ -462,15 +562,13 @@ export function GameTable({
               small
               onFlip={seatTarget ? () => handleTarget(opp.id) : undefined}
               disabled={!canTarget(opp)}
-              actionLabel={
-                chrome.askRankIntent
-                  ? pickedRank
-                    ? `Ask ${opp.name} for ${pickedRank}s`
-                    : `Ask ${opp.name}`
-                  : chrome.drawFromIntent
-                    ? `Draw from ${opp.name}`
-                    : undefined
-              }
+              actionLabel={seatActionLabel({
+                askRank: Boolean(chrome.askRankIntent),
+                drawFrom: Boolean(chrome.drawFromIntent),
+                rank: pickedRank,
+                name: opp.name,
+                handCount: opp.handCount,
+              })}
             />
           ))}
         </div>
@@ -511,11 +609,9 @@ export function GameTable({
           {chrome.showMemory && (
             <MemoryGrid grid={gs.grid} busy={busy || !isMyTurn} onFlip={(index) => trySend({ intent: 'flip', index })} />
           )}
-          {chrome.drawFromIntent && isMyTurn && !busy && (
-            <p className="text-white/45 text-xs text-center max-w-[10rem]">Click a player to draw</p>
-          )}
-          {(askLine || scoreLine || extraRows.length > 0 || chrome.turnButtons.length > 0 || ladders.length > 0 || hole || chrome.widowSwap || chrome.showCorners || chrome.showFishing || chrome.showPeg) && (
-            <div className="flex flex-col items-center gap-2 max-w-[14rem]">
+          {showTalkPanel && (
+            <div className="flex flex-col items-center gap-2 max-w-[20rem]">
+              {askControls}
               {typeof gs.pot === 'number' && <p className="text-gold/60 text-[10px]">Pot {gs.pot}</p>}
               <FeltBoardExtras
                 showCorners={chrome.showCorners}
@@ -651,8 +747,8 @@ export function GameTable({
                 pickHint={
                   chrome.askRankIntent
                     ? pickedRank
-                      ? `Ask someone for ${pickedRank}s`
-                      : 'Tap a rank you hold'
+                      ? `Asking for ${pickedRank}s — use Ask above, or tap a player`
+                      : 'Or tap a card to pick its rank'
                     : undefined
                 }
                 playerName={player.name}
@@ -684,15 +780,13 @@ export function GameTable({
               position="top"
               stock={stock}
               onSelect={seatTarget ? () => handleTarget(opp.id) : undefined}
-              selectLabel={
-                chrome.askRankIntent
-                  ? pickedRank
-                    ? `Ask ${opp.name} for ${pickedRank}s`
-                    : `Ask ${opp.name}`
-                  : chrome.drawFromIntent
-                    ? `Draw from ${opp.name}`
-                    : undefined
-              }
+              selectLabel={seatActionLabel({
+                askRank: Boolean(chrome.askRankIntent),
+                drawFrom: Boolean(chrome.drawFromIntent),
+                rank: pickedRank,
+                name: opp.name,
+                handCount: opp.handCount,
+              })}
               selectDisabled={!canTarget(opp)}
               scoreLabel={seatScore(opp.id)}
             />
@@ -739,11 +833,9 @@ export function GameTable({
           {chrome.showMemory && (
             <MemoryGrid grid={gs.grid} busy={busy || !isMyTurn} onFlip={(index) => trySend({ intent: 'flip', index })} />
           )}
-          {chrome.drawFromIntent && isMyTurn && !busy && (
-            <p className="text-white/50 text-sm text-center max-w-xs">Click a player to draw from their hand</p>
-          )}
-          {(askLine || scoreLine || extraRows.length > 0 || chrome.turnButtons.length > 0 || ladders.length > 0 || hole || chrome.widowSwap || chrome.showCorners || chrome.showFishing || chrome.showPeg) && (
+          {showTalkPanel && (
             <div className="flex flex-col items-center gap-3 max-w-lg">
+              {askControls}
               {typeof gs.pot === 'number' && <p className="text-gold/70 text-sm">Pot {gs.pot}</p>}
               <FeltBoardExtras
                 showCorners={chrome.showCorners}
@@ -888,8 +980,8 @@ export function GameTable({
                 pickHint={
                   chrome.askRankIntent
                     ? pickedRank
-                      ? `Ask someone for ${pickedRank}s`
-                      : 'Click a rank you hold, then a player'
+                      ? `Asking for ${pickedRank}s — use Ask above, or click a player`
+                      : 'Or click a card to pick its rank'
                     : undefined
                 }
                 playerName={player.name}

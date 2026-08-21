@@ -67,7 +67,7 @@ export const DRAW_FROM_INTENT: Record<string, string> = {
   old_maid: 'draw-from',
 };
 
-/** Select a rank in hand, then click a player to ask. */
+/** Ask control: rank from the hand, then a seat (or anyone). */
 export const ASK_RANK_INTENT: Record<string, string> = {
   go_fish: 'gofish-ask',
 };
@@ -171,6 +171,7 @@ export function resolveTableChrome(input: {
       handReveal !== 'stock' &&
       !trick &&
       !drawFromIntent &&
+      !askRankIntent &&
       !showTableau &&
       !showMemory &&
       !showCorners &&

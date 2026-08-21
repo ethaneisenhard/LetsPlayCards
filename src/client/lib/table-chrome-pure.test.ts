@@ -74,7 +74,7 @@ describe('resolveTableChrome', () => {
   it('maps Go Fish to ask-rank', () => {
     expect(resolveTableChrome({ gameType: 'go_fish' })).toMatchObject({
       askRankIntent: 'gofish-ask',
-      showSharedPiles: true,
+      showSharedPiles: false,
     });
   });
 

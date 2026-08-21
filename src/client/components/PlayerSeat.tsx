@@ -55,6 +55,11 @@ export function PlayerSeat({ player, position, stock, onSelect, selectLabel, sel
         </div>
         <span className="text-white/70 text-xs font-medium max-w-[80px] truncate">{player.name}</span>
         {scoreLabel && <span className="text-gold/60 text-[10px] tabular-nums">{scoreLabel}</span>}
+        {selectLabel && (
+          <span className={`text-[10px] max-w-[7rem] text-center leading-tight ${selectable ? 'text-gold/70' : 'text-white/35'}`}>
+            {selectLabel}
+          </span>
+        )}
       </div>
 
       <div
