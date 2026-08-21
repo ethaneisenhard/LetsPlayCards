@@ -62,11 +62,19 @@ describe('renderHistoryPage', () => {
     expect(html).not.toContain('id="root"');
   });
 
-  it('sends people into catalog games and the live lobby', () => {
+  it('starts those catalog games from Play, and keeps rules on /games/', () => {
     expect(html).toContain('href="/"');
+    expect(html).toContain('href="/solo/war"');
+    expect(html).toContain('href="/solo/go_fish"');
     expect(html).toContain('href="/games/war/"');
     expect(html).toContain('href="/games/go_fish/"');
+    expect(html).toContain('class="tile-play" href="/solo/war"');
+    expect(html).not.toMatch(/class="play"><a href="\/"/);
     expect(html).toContain('width=device-width');
+    const war = GAME_CATALOG.find((e) => e.type === 'war')!;
+    expect(html).toContain(war.config.emoji);
+    expect(html).toContain(war.config.tagline);
+    expect(html).toContain('2 players');
   });
 
   it('embeds a local symbols collection and an over-the-centuries strip', () => {
@@ -115,8 +123,9 @@ describe('renderHistoryPage', () => {
 
   it('shows real historic cards in the marks section, not a drawing', () => {
     expect(HISTORY_ASSET_VERSION).toBe('tiles1');
-    expect(html).toMatch(/\.gamelist \.n\{display:block/);
-    expect(html).toMatch(/\.gamelist \.d\{display:block/);
+    expect(html).toMatch(/\.game-tile \.n\{display:block/);
+    expect(html).toMatch(/\.game-tile \.d\{display:block/);
+    expect(html).toContain('class="game-tiles"');
     expect(html).toContain('class="marks-grid"');
     for (const fig of HISTORY_MARKS.figures) {
       expect(fig.kind).toBe('photo');

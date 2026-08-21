@@ -23,21 +23,24 @@ section p+p{margin-top:14px}
 .play{margin:48px 0;padding:22px 26px;border-radius:16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-align:center}
 .play a{color:#fff;font-weight:700;font-size:1.05rem;text-decoration:none}
 .related{margin-top:40px}
-.related .tags{display:flex;flex-wrap:wrap;gap:8px}
-.related a{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:6px 14px;border-radius:999px;font-size:14px}
 .back{display:inline-block;margin-bottom:28px;font-size:14px}
 footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.08);color:#6b7280;font-size:13px}
 .hub h1{font-size:3rem}
 .hub .intro{color:#a7b0bf;max-width:640px}
 .fam{margin:48px 0}
 .fam h2{font-size:1.5rem}
-.gamelist{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:14px;margin-top:16px}
-.gamelist a{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:18px 18px 16px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#e6e9ef;text-decoration:none;min-height:7.5rem}
-.gamelist a:hover{border-color:#c9a84c;text-decoration:none}
-.gamelist .n{display:block;font-weight:700;font-size:1.12rem;line-height:1.25;color:#fff}
-.gamelist .d{display:block;font-size:.92rem;line-height:1.45;color:#8b93a1;margin-top:8px}
-.gamelist a::after{content:"Play";display:block;margin-top:auto;padding-top:12px;font-size:12px;font-weight:600;letter-spacing:.04em;color:#c9a84c}
-.live{display:inline-block;font-size:10px;color:#34d399;border:1px solid rgba(52,211,153,.4);padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.game-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:10px;margin-top:16px}
+.game-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.1);color:#e6e9ef;min-height:8.5rem;background-color:#111827;background-size:cover}
+.game-tile .tile-emoji{display:block;font-size:1.75rem;line-height:1;margin-bottom:8px}
+.game-tile .n{display:block;font-weight:700;font-size:.95rem;line-height:1.25;color:#fff}
+.game-tile .d{display:block;font-size:.72rem;line-height:1.4;color:rgba(255,255,255,.5);margin-top:4px}
+.game-tile .tile-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;width:100%;margin-top:auto;padding-top:8px}
+.game-tile .tile-players{font-size:10px;color:rgba(255,255,255,.3)}
+.game-tile .tile-links{display:flex;gap:6px;flex-shrink:0}
+.game-tile .tile-rules{padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:rgba(255,255,255,.8);font-size:10px;font-weight:600;letter-spacing:.02em;text-decoration:none}
+.game-tile .tile-rules:hover{border-color:rgba(201,168,76,.5);color:#c9a84c;text-decoration:none}
+.game-tile .tile-play{padding:4px 8px;border-radius:8px;background:#059669;color:#fff;font-size:10px;font-weight:700;letter-spacing:.02em;text-decoration:none}
+.game-tile .tile-play:hover{background:#10b981;text-decoration:none}
 .history-banner{display:block;margin:28px 0 8px;padding:18px 20px;border-radius:14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.28);color:#e6e9ef;text-decoration:none}
 .history-banner:hover{border-color:#c9a84c;text-decoration:none}
 .history-banner .k{font-size:12px;color:#c9a84c;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
@@ -78,8 +81,8 @@ footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.0
   .hub h1{font-size:2.05rem}
   .lead{font-size:1.05rem}
   .play{padding:18px 16px}
-  .gamelist{grid-template-columns:1fr;gap:12px}
-  .gamelist a{padding:18px 16px;min-height:0}
+  .game-tiles{grid-template-columns:1fr 1fr;gap:10px}
+  .game-tile{padding:14px;min-height:0}
 }
 `;
 
