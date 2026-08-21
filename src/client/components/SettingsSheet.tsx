@@ -10,6 +10,7 @@ import {
 } from '../lib/profile';
 import { AVATAR_EMOJI_OPTIONS } from '../lib/profile-pure';
 import { listTableThemes } from '../lib/table-theme-registry-pure';
+import { loadShowHandReadout, saveShowHandReadout } from '../lib/hand-readout-pref';
 import { loadTableThemePrefs, pickTableTheme, resolveSurface, type ThemeScope } from '../lib/table-theme';
 import { ProfileAvatar } from './ProfileAvatar';
 
@@ -28,6 +29,7 @@ export function SettingsSheet({
   const [nameDraft, setNameDraft] = useState(() => loadDisplayName());
   const [avatar, setAvatar] = useState(() => loadAvatarEmoji());
   const [customEmoji, setCustomEmoji] = useState('');
+  const [showHandReadout, setShowHandReadout] = useState(() => loadShowHandReadout());
 
   useEffect(() => {
     if (!open) return;
@@ -38,6 +40,7 @@ export function SettingsSheet({
     setNameDraft(loadDisplayName());
     setAvatar(loadAvatarEmoji());
     setCustomEmoji('');
+    setShowHandReadout(loadShowHandReadout());
   }, [open, gameType]);
 
   useEffect(() => {
@@ -46,6 +49,7 @@ export function SettingsSheet({
       setTableId(resolveSurface(gameType ?? 'freeplay').id);
       setNameDraft(loadDisplayName());
       setAvatar(loadAvatarEmoji());
+      setShowHandReadout(loadShowHandReadout());
     };
     window.addEventListener(PREFS_CHANGED_EVENT, sync);
     return () => window.removeEventListener(PREFS_CHANGED_EVENT, sync);
@@ -167,6 +171,40 @@ export function SettingsSheet({
               </button>
             </div>
           </div>
+
+          <p className="text-[color:var(--muted)] text-[10px] uppercase tracking-widest mb-2">Your cards</p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showHandReadout}
+            onClick={() => setShowHandReadout(saveShowHandReadout(!showHandReadout))}
+            className={`w-full text-left rounded-2xl border p-4 mb-6 ${
+              showHandReadout
+                ? 'border-gold/50 bg-gold/10'
+                : 'border-[color:var(--border)] bg-[color:var(--chip-bg)]'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[color:var(--text)] font-semibold text-sm">
+                Show a written list of my cards
+              </span>
+              <span
+                className={`shrink-0 w-10 h-6 rounded-full p-0.5 ${
+                  showHandReadout ? 'bg-gold' : 'bg-white/20'
+                }`}
+                aria-hidden
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white transition-transform ${
+                    showHandReadout ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </span>
+            </div>
+            <p className="text-[color:var(--muted)] text-[11px] mt-2">
+              You can still see the cards in your hand.
+            </p>
+          </button>
 
           <p className="text-[color:var(--muted)] text-[10px] uppercase tracking-widest mb-2">Appearance</p>
           <div className="flex gap-2 mb-6">

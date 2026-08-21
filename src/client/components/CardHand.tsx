@@ -8,7 +8,9 @@ import {
   sortHandBySuit,
   syncHandOrder,
 } from '../lib/hand-order-pure';
+import { loadShowHandReadout } from '../lib/hand-readout-pref';
 import { handCountLine, handReadout } from '../lib/hand-readout-pure';
+import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { youSeatLine } from '../lib/table-turn-pure';
 
 interface CardHandProps {
@@ -66,6 +68,7 @@ export function CardHand({
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [ordered, setOrdered] = useState<Card[]>(() => [...cards]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [showReadout, setShowReadout] = useState(() => loadShowHandReadout());
   const fanRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ id: string; x: number; y: number; active: boolean } | null>(null);
   const skipClick = useRef(false);
@@ -73,6 +76,12 @@ export function CardHand({
   useEffect(() => {
     setOrdered((prev) => syncHandOrder(prev, cards));
   }, [cards]);
+
+  useEffect(() => {
+    const sync = () => setShowReadout(loadShowHandReadout());
+    window.addEventListener(PREFS_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(PREFS_CHANGED_EVENT, sync);
+  }, []);
 
   const canAct = isMyTurn && Boolean(onPick);
 
@@ -180,20 +189,31 @@ export function CardHand({
   );
 
   const arrangeHint = 'Drag a card to move it · Suit groups shapes · Pairs groups the same number';
+  const readout = ordered.length > 0 ? `${handCountLine(ordered.length)}: ${handReadout(ordered)}` : handCountLine(0);
+  const seat = youSeatLine(playerName, isMyTurn);
+  const readoutLine = (
+    <p
+      className={
+        showReadout
+          ? `${mobile ? 'text-white/80 text-[11px] px-2' : 'text-white/85 text-sm text-center px-4'} leading-snug break-words`
+          : 'sr-only'
+      }
+      aria-live="polite"
+    >
+      {readout}
+    </p>
+  );
 
   if (mobile) {
-    const readout = ordered.length > 0 ? `${handCountLine(ordered.length)}: ${handReadout(ordered)}` : handCountLine(0);
     return (
-      <div className="flex flex-col gap-2" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
+      <div className="flex flex-col gap-2" role="region" aria-label={`${seat}. ${readout}`}>
         <div className="flex items-start gap-2 px-2">
           <span className="min-w-0 flex-1 text-white text-xs font-semibold break-words">
-            {youSeatLine(playerName, isMyTurn)}
+            {seat}
           </span>
           {orderBar}
         </div>
-        <p className="text-white/80 text-[11px] leading-snug px-2 break-words" aria-live="polite">
-          {readout}
-        </p>
+        {readoutLine}
 
         {aboveFan}
         {fan}
@@ -205,12 +225,9 @@ export function CardHand({
   }
 
   return (
-    <div className="flex flex-col items-center gap-3" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
-      <div className="text-white text-sm font-semibold">{youSeatLine(playerName, isMyTurn)}</div>
-      <p className="text-white/85 text-sm text-center leading-snug px-4 break-words" aria-live="polite">
-        {handCountLine(ordered.length)}
-        {ordered.length > 0 ? `: ${handReadout(ordered)}` : ''}
-      </p>
+    <div className="flex flex-col items-center gap-3" role="region" aria-label={`${seat}. ${readout}`}>
+      <div className="text-white text-sm font-semibold">{seat}</div>
+      {readoutLine}
 
       {aboveFan}
       {fan}
