@@ -31,6 +31,8 @@ footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.0
 .fam h2{font-size:1.5rem}
 .game-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:10px;margin-top:16px}
 .game-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.1);color:#e6e9ef;min-height:8.5rem;background-color:#111827;background-size:cover}
+.game-tile .tile-main{display:flex;flex-direction:column;align-items:flex-start;width:100%;flex:1;color:inherit;text-decoration:none}
+.game-tile .tile-main:hover{text-decoration:none}
 .game-tile .tile-emoji{display:block;font-size:1.75rem;line-height:1;margin-bottom:8px}
 .game-tile .n{display:block;font-weight:700;font-size:.95rem;line-height:1.25;color:#fff}
 .game-tile .d{display:block;font-size:.72rem;line-height:1.4;color:rgba(255,255,255,.5);margin-top:4px}

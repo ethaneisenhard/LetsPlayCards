@@ -88,13 +88,16 @@ export function catalogTilesForSlugs(slugs: readonly string[]): CatalogEntry[] {
 export function renderGameTile(entry: CatalogEntry): string {
   const { config, type, status } = entry;
   const playable = status === 'live';
+  const startHref = playable ? soloHref(type) : '/';
   const play = playable
     ? `<a class="tile-play" href="${esc(soloHref(type))}">Play</a>`
     : '';
   return `<article class="game-tile" style="background-image:${esc(catalogGradientCss(config.color))}">
+<a class="tile-main" href="${esc(startHref)}">
 <span class="tile-emoji" aria-hidden="true">${esc(config.emoji)}</span>
 <span class="n">${esc(config.name)}</span>
 <span class="d">${esc(config.tagline)}</span>
+</a>
 <div class="tile-foot">
 <span class="tile-players">${esc(playerCountLabel(config.minPlayers, config.maxPlayers))}</span>
 <span class="tile-links">
