@@ -43,6 +43,12 @@ describe('staticSeoRoute', () => {
     expect(staticSeoRoute('/solo/go_fish')).toBeNull();
     expect(staticSeoRoute('/game/ABC123')).toBeNull();
   });
+
+  it('never rewrites /history/img files to the article HTML', () => {
+    expect(staticSeoRoute('/history/img/suit-marks.svg')).toBeNull();
+    expect(staticSeoRoute('/history/img/ming-1400.webp')).toBeNull();
+    expect(staticSeoRoute('/history/img/italian-15c.webp')).toBeNull();
+  });
 });
 
 describe('sitemap + robots', () => {

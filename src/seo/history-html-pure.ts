@@ -1,6 +1,8 @@
 import {
+  HISTORY_ASSET_VERSION,
   HISTORY_CANONICAL_PATH,
   HISTORY_CENTURIES,
+  HISTORY_HERO,
   HISTORY_MARKS,
   HISTORY_PAGE,
   type HistoryFigure,
@@ -39,12 +41,17 @@ function faqJsonLd(): string {
   });
 }
 
-function renderFigure(fig: HistoryFigure, extraClass = ''): string {
+function assetSrc(path: string): string {
+  return `${path}?v=${HISTORY_ASSET_VERSION}`;
+}
+
+function renderFigure(fig: HistoryFigure, extraClass = '', eager = false): string {
   const cls = ['hist-fig', fig.wide ? 'wide' : '', extraClass].filter(Boolean).join(' ');
   const kind =
     fig.kind === 'drawing' ? '<span class="fig-kind">Original drawing — not a photo of a real pack</span>' : '';
+  const loading = eager ? '' : ' loading="lazy"';
   return `<figure class="${cls}">
-<img src="${esc(fig.src)}" alt="${esc(fig.alt)}" width="${fig.width}" height="${fig.height}" loading="lazy" decoding="async">
+<img src="${esc(assetSrc(fig.src))}" alt="${esc(fig.alt)}" width="${fig.width}" height="${fig.height}"${loading} decoding="async">
 <figcaption>
 ${kind}
 <strong>${esc(fig.period)}</strong>
@@ -54,29 +61,32 @@ ${kind}
 </figure>`;
 }
 
+function renderVisuals(): string {
+  const centuryFigs = HISTORY_CENTURIES.figures
+    .map((f, i) => renderFigure(f, '', i === 0))
+    .join('\n');
+  return `${renderFigure(HISTORY_HERO, 'hero', true)}
+<section id="${HISTORY_MARKS.id}"><h2>${esc(HISTORY_MARKS.heading)}</h2>
+<p>${esc(HISTORY_MARKS.intro)}</p>
+${renderFigure(HISTORY_MARKS.figure, 'marks-chart', true)}</section>
+<section id="${HISTORY_CENTURIES.id}"><h2>${esc(HISTORY_CENTURIES.heading)}</h2>
+<p>${esc(HISTORY_CENTURIES.intro)}</p>
+<div class="century-strip">${centuryFigs}</div></section>`;
+}
+
 export function renderHistoryPage(baseUrl = SITE_ORIGIN): string {
   const url = historyCanonicalUrl(baseUrl);
   const tocItems = [
-    ...HISTORY_PAGE.sections.slice(0, 3),
     { id: HISTORY_MARKS.id, heading: HISTORY_MARKS.heading },
     { id: HISTORY_CENTURIES.id, heading: HISTORY_CENTURIES.heading },
-    ...HISTORY_PAGE.sections.slice(3),
+    ...HISTORY_PAGE.sections,
   ];
   const toc = tocItems.map((s) => `<li><a href="#${esc(s.id)}">${esc(s.heading)}</a></li>`).join('\n');
 
   const sections = HISTORY_PAGE.sections
     .map((s) => {
       const paras = s.paragraphs.map((p) => `<p>${esc(p)}</p>`).join('\n');
-      let extra = '';
-      if (s.id === 'fifty-two') {
-        extra = `<section id="${HISTORY_MARKS.id}"><h2>${esc(HISTORY_MARKS.heading)}</h2>
-<p>${esc(HISTORY_MARKS.intro)}</p>
-${renderFigure(HISTORY_MARKS.figure)}</section>
-<section id="${HISTORY_CENTURIES.id}"><h2>${esc(HISTORY_CENTURIES.heading)}</h2>
-<p>${esc(HISTORY_CENTURIES.intro)}</p>
-<div class="century-strip">${HISTORY_CENTURIES.figures.map((f) => renderFigure(f)).join('\n')}</div></section>`;
-      }
-      return `<section id="${esc(s.id)}"><h2>${esc(s.heading)}</h2>\n${paras}</section>\n${extra}`;
+      return `<section id="${esc(s.id)}"><h2>${esc(s.heading)}</h2>\n${paras}</section>`;
     })
     .join('\n');
 
@@ -109,6 +119,7 @@ ${renderFigure(HISTORY_MARKS.figure)}</section>
 <meta name="twitter:description" content="${esc(HISTORY_PAGE.metaDescription)}">
 ${articleJsonLd(url)}
 ${faqJsonLd()}
+<!-- history-visuals:${HISTORY_ASSET_VERSION} -->
 <style>${SSG_CSS}</style>
 </head>
 <body>
@@ -117,7 +128,8 @@ ${faqJsonLd()}
 <a class="back" href="/games/">← Card game rules</a>
 <h1>${esc(HISTORY_PAGE.h1)}</h1>
 <p class="lead">${esc(HISTORY_PAGE.lead)}</p>
-<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol>${toc}</ol></nav>
+${renderVisuals()}
+<nav class="toc" aria-label="On this page"><h2>The written story</h2><ol>${toc}</ol></nav>
 ${sections}
 <section id="play">
 <h2>Play the games that grew from this pack</h2>

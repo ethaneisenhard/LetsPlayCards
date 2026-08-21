@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { GAME_CATALOG } from '../game/registry/catalog';
 import { GLOSSARY } from './glossary';
-import { GAME_ORIGINS, HISTORY_CENTURIES, HISTORY_MARKS, HISTORY_PAGE, historyImageSrcs } from './history';
+import {
+  GAME_ORIGINS,
+  HISTORY_ASSET_VERSION,
+  HISTORY_CENTURIES,
+  HISTORY_MARKS,
+  HISTORY_PAGE,
+  historyImageSrcs,
+} from './history';
 import { renderHistoryPage } from '../seo/history-html-pure';
 
 const CATALOG_SLUGS = new Set<string>(GAME_CATALOG.map((e) => e.type));
@@ -68,9 +75,10 @@ describe('renderHistoryPage', () => {
     expect(html).toContain(HISTORY_MARKS.heading);
     expect(html).toContain(HISTORY_CENTURIES.heading);
     expect(html).toContain('Original drawing — not a photo of a real pack');
+    expect(html).toContain(`<!-- history-visuals:${HISTORY_ASSET_VERSION} -->`);
     expect(html).toMatch(/loading="lazy"/);
     for (const src of historyImageSrcs()) {
-      expect(html).toContain(`src="${src}"`);
+      expect(html).toContain(`src="${src}?v=${HISTORY_ASSET_VERSION}"`);
       expect(src.startsWith('/history/img/')).toBe(true);
     }
     expect(HISTORY_CENTURIES.figures.length).toBeGreaterThanOrEqual(6);
@@ -78,6 +86,20 @@ describe('renderHistoryPage', () => {
       expect(fig.alt.length).toBeGreaterThan(20);
       expect(fig.credit.license.length).toBeGreaterThan(3);
       expect(html).toContain(fig.credit.license);
+    }
+  });
+
+  it('puts pictures above the essay and eager-loads the first three', () => {
+    const marksAt = html.indexOf('id="marks"');
+    const centuriesAt = html.indexOf('id="centuries"');
+    const chinaAt = html.indexOf('id="china"');
+    expect(marksAt).toBeGreaterThan(0);
+    expect(centuriesAt).toBeGreaterThan(marksAt);
+    expect(chinaAt).toBeGreaterThan(centuriesAt);
+    const imgs = [...html.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+    expect(imgs.length).toBeGreaterThanOrEqual(3);
+    for (const tag of imgs.slice(0, 3)) {
+      expect(tag).not.toMatch(/loading="lazy"/);
     }
   });
 });

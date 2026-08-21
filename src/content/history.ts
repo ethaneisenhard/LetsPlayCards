@@ -27,7 +27,7 @@ export const HISTORY_PAGE = {
     'A clear history of playing cards: paper cards in China, the path through Egypt, how we got four suits and 52 cards, and how family games spread. Then play them here.',
   h1: 'The History of Playing Cards',
   lead:
-    'A deck is the full pack of cards you play with — usually 52 small rectangles of paper or plastic. Four families of cards, called suits (hearts, diamonds, clubs, and spades), make up that pack. It did not appear all at once. It traveled, changed its pictures, and picked up kitchen-table games along the way. Here is the story most historians agree on, and the parts they still argue about.',
+    'A deck is the full pack of cards you play with — usually 52. Four families of cards, called suits (hearts, diamonds, clubs, and spades), did not appear all at once. Pictures first, then the story historians agree on — and the parts they still argue about.',
   dateModified: '2026-08-21',
   sections: [
     {
@@ -192,6 +192,26 @@ export interface HistoryFigure {
   wide?: boolean;
 }
 
+/** Bump when visuals move so cached preview HTML/images refresh. */
+export const HISTORY_ASSET_VERSION = 'top2';
+
+export const HISTORY_HERO = {
+  src: '/history/img/italian-15c.webp',
+  alt: 'A printed sheet of early Italian playing cards with cups, coins, swords, and clubs.',
+  caption:
+    'An uncut sheet from Italy in the 1400s. The four marks on the cards — later called suits — are already cups, coins, swords, and clubs.',
+  period: '1400s · Italy',
+  credit: {
+    text: 'National Gallery of Art, Washington (Rosenwald Collection, 1951.16.5)',
+    href: 'https://commons.wikimedia.org/wiki/File:Italian_15th_Century,_Playing_Cards,_15th_century,_NGA_41319.jpg',
+    license: 'CC0 1.0',
+  },
+  kind: 'photo' as const,
+  width: 1200,
+  height: 812,
+  wide: true,
+} satisfies HistoryFigure;
+
 export const HISTORY_MARKS = {
   id: 'marks',
   heading: 'What the marks looked like',
@@ -209,8 +229,8 @@ export const HISTORY_MARKS = {
       license: 'Original illustration (not a photo of a historic pack)',
     },
     kind: 'drawing' as const,
-    width: 800,
-    height: 980,
+    width: 390,
+    height: 1480,
   } satisfies HistoryFigure,
 };
 
@@ -332,5 +352,5 @@ export const HISTORY_CENTURIES = {
 };
 
 export function historyImageSrcs(): string[] {
-  return [HISTORY_MARKS.figure.src, ...HISTORY_CENTURIES.figures.map((f) => f.src)];
+  return [HISTORY_HERO.src, HISTORY_MARKS.figure.src, ...HISTORY_CENTURIES.figures.map((f) => f.src)];
 }

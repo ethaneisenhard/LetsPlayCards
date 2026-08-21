@@ -19,10 +19,15 @@ export function normalizePath(pathname: string): string {
 export function staticSeoRoute(pathname: string): StaticSeoRoute | null {
   const path = normalizePath(pathname);
 
+  // Image files under /history/img/* must fall through to ASSETS — never index.html.
+  if (path === '/history/img' || path.startsWith('/history/img/')) {
+    return null;
+  }
+
   if (HISTORY_ALIAS_PATHS.some((alias) => normalizePath(alias) === path)) {
     return { kind: 'redirect', to: HISTORY_CANONICAL_PATH, status: 301 };
   }
-  if (path === normalizePath(HISTORY_CANONICAL_PATH)) {
+  if (path === '/history' || path === normalizePath(HISTORY_CANONICAL_PATH)) {
     return { kind: 'asset', path: '/history/index.html' };
   }
   if (path === '/games') {

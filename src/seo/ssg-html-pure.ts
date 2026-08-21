@@ -50,6 +50,9 @@ footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.0
 .note{font-size:.9rem;color:#8b93a1}
 .hist-fig{margin:18px 0 0;padding:0}
 .hist-fig img{display:block;width:100%;height:auto;border-radius:12px;background:#111827;border:1px solid rgba(255,255,255,.08)}
+.hist-fig.hero{margin:8px 0 28px}
+.hist-fig.hero img{max-height:min(56vh,420px);object-fit:contain}
+.hist-fig.marks-chart img{max-height:none}
 .hist-fig figcaption{margin-top:10px;font-size:.92rem;color:#c3cad5}
 .hist-fig figcaption strong{display:block;color:#fff;font-size:.95rem;margin-bottom:4px}
 .fig-kind{display:inline-block;font-size:11px;color:#c9a84c;border:1px solid rgba(201,168,76,.35);padding:1px 8px;border-radius:999px;margin:0 0 8px}
