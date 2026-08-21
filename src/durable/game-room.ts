@@ -1,17 +1,12 @@
 import type { Env } from '../env';
-import {
-  addPlayer,
-  applyAction,
-  createLobbyState,
-  publicView,
-  type EngineState,
-  type GameAction,
-} from '../game/engine';
-import { GAME_REGISTRY } from '../game/registry/registry';
-import { GAME_CONFIGS, catalogEntry } from '../game/registry/catalog';
-import { DEFAULT_FREEPLAY_RULES } from '../game/types';
-import type { GameSettings } from '../game/types';
+import { applyAction, type EngineState, type GameAction } from '../game/engine';
 import type { GameType } from '../game/gameTypes';
+import {
+  applyRoomAction,
+  createRoomState,
+  joinRoom,
+  viewFor,
+} from './room-handler';
 
 /**
  * One Durable Object per game. Holds the authoritative EngineState (in-memory +
@@ -50,11 +45,6 @@ export class GameRoom {
     }
   }
 
-  private viewFor(state: EngineState, viewerId?: string): unknown {
-    const game = GAME_REGISTRY[state.game.gameType];
-    return game?.view ? game.view(state, viewerId) : publicView(state, viewerId);
-  }
-
   private send(ws: WebSocket, msg: unknown): void {
     try {
       ws.send(JSON.stringify(msg));
@@ -65,7 +55,7 @@ export class GameRoom {
 
   private broadcast(state: EngineState): void {
     for (const ws of this.sockets) {
-      this.send(ws, { type: 'state', state: this.viewFor(state, this.playerIds.get(ws)) });
+      this.send(ws, { type: 'state', state: viewFor(state, this.playerIds.get(ws)) });
     }
   }
 
@@ -80,15 +70,7 @@ export class GameRoom {
       if (body.intent === 'init') {
         const code = String(body.code ?? '').toUpperCase();
         const gameType = (body.gameType ?? 'freeplay') as GameType;
-        const config = catalogEntry(gameType)?.config ?? GAME_CONFIGS.freeplay;
-        const settings: GameSettings = {
-          dealCount: config.dealCount === 'all' ? 0 : config.dealCount,
-          maxPlayers: config.maxPlayers,
-        };
-        if (gameType === 'freeplay') {
-          settings.freeplay = { ...DEFAULT_FREEPLAY_RULES };
-        }
-        await this.save(createLobbyState(crypto.randomUUID(), code, gameType, settings));
+        await this.save(createRoomState(code, gameType));
         return Response.json({ ok: true, code });
       }
 
@@ -100,25 +82,23 @@ export class GameRoom {
 
       if (!body.intent) {
         const state = await this.load();
-        return Response.json({ state: this.viewFor(state, viewerId) });
+        return Response.json({ state: viewFor(state, viewerId) });
       }
 
       const state = await this.load();
 
       if (body.intent === 'join') {
-        const name = String(body.name ?? '').trim().slice(0, 20);
-        if (!name) return Response.json({ error: 'Please enter your name.' }, { status: 400 });
         const playerId = crypto.randomUUID();
-        const next = addPlayer(state, playerId, name);
+        const next = joinRoom(state, playerId, String(body.name ?? ''));
         await this.save(next);
         this.broadcast(next);
-        return Response.json({ ok: true, playerId, state: this.viewFor(next, playerId) });
+        return Response.json({ ok: true, playerId, state: viewFor(next, playerId) });
       }
 
-      const next = applyAction(state, body as unknown as GameAction);
+      const next = applyRoomAction(state, body as unknown as GameAction);
       await this.save(next);
       this.broadcast(next);
-      return Response.json({ ok: true, state: this.viewFor(next, viewerId) });
+      return Response.json({ ok: true, state: viewFor(next, viewerId) });
     } catch (err) {
       return Response.json(
         { error: err instanceof Error ? err.message : String(err) },
@@ -150,7 +130,7 @@ export class GameRoom {
       if (typeof data.playerId === 'string') this.playerIds.set(ws, data.playerId);
       try {
         const state = await this.load();
-        this.send(ws, { type: 'state', state: this.viewFor(state, this.playerIds.get(ws)) });
+        this.send(ws, { type: 'state', state: viewFor(state, this.playerIds.get(ws)) });
       } catch (err) {
         this.send(ws, { type: 'error', error: err instanceof Error ? err.message : String(err) });
       }

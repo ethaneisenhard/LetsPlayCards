@@ -109,6 +109,7 @@ export const concentrationGame: CardGame = {
   view(state, viewerId) {
     const pv = publicView(state, viewerId);
     const gs = state.game.gameState as ConcentrationState;
+    if (!Array.isArray(gs?.grid)) return pv;
     const grid = gs.grid.map((c) =>
       c.faceUp || c.matched ? c : { ...c, card: { id: c.card.id, rank: 'A' as const, suit: 'spades' as const } },
     );

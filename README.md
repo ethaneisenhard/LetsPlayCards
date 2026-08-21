@@ -32,10 +32,19 @@ codes without waking every room.
 ```bash
 pnpm install            # once
 pnpm test
+pnpm playtest           # sit bots at a real table for every catalog game
+pnpm playtest war       # one game
 pnpm typecheck
 pnpm dev                # wrangler dev :8789
 pnpm d1:migrate
 ```
+
+`pnpm playtest` (also run from `pnpm test`) creates a room, joins 2+ players,
+deals, and takes legal turns through the same `applyAction` + `publicView` path
+the Durable Object uses. Each player only sees their own projection. Games that
+can run forever pass on a bounded session of legal play; a deadlock, leak,
+`EngineError`, or seat desync is a fail. Human Chrome/Safari QA is still
+separate (`pnpm qa:next`).
 
 ## Deploy
 

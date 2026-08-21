@@ -8,6 +8,7 @@
     "build": "node scripts/build-client.mjs && tailwindcss -i ./src/client/styles.css -o ./public/styles.css --minify && tsx scripts/build-glossary.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "playtest": "tsx scripts/playtest.ts",
     "qa:next": "tsx scripts/qa-next.ts",
     "d1:migrate": "wrangler d1 migrations apply letsplaycards --local",
     "d1:migrate:remote": "wrangler d1 migrations apply letsplaycards --remote",

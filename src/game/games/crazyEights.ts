@@ -54,6 +54,7 @@ export const crazyEightsGame: CardGame = {
     if (action.intent === 'draw') {
       let deck = [...game.deck];
       if (deck.length === 0) {
+        if (game.discardPile.length <= 1) throw new EngineError('No cards left to draw');
         const top = game.discardPile[game.discardPile.length - 1];
         deck = shuffleDeck(game.discardPile.slice(0, -1));
         const card = deck[0];

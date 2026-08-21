@@ -126,17 +126,27 @@ export const euchreGame: CardGame = {
           } else if (tricks >= 3) teamScore[team] += 2;
         }
         const winner = teamScore[0] >= TARGET && teamScore[0] > teamScore[1] ? '0' : teamScore[1] >= TARGET && teamScore[1] > teamScore[0] ? '1' : null;
+        let nextHands = nextPlayers;
+        let nextDeck = game.deck;
+        if (!winner) {
+          const deck = shuffleDeck(buildDeck({ ranks: ['9', '10', 'J', 'Q', 'K', 'A'] }));
+          nextHands = players.map((p, i) => ({ ...p, hand: deck.slice(i * 5, (i + 1) * 5) }));
+          nextDeck = deck.slice(players.length * 5);
+        }
         return {
           game: {
             ...game,
             status: winner ? 'finished' : 'playing',
-            currentSeat: winner ? winnerSeat : nextSeat(seats, winnerSeat),
+            deck: nextDeck,
+            currentSeat: winner ? winnerSeat : 0,
             gameState: {
-              ...gs, currentTrick: [], leadSuit: null, tricksWon, teamScore, handsPlayed: winner ? handsPlayed : 0,
+              ...gs, currentTrick: [], leadSuit: null,
+              tricksWon: winner ? tricksWon : Object.fromEntries(players.map((p) => [p.id, 0])),
+              teamScore, handsPlayed: winner ? handsPlayed : 0,
               phase: winner ? 'finished' : 'trump', trump: winner ? gs.trump : null, winner,
             },
           },
-          players: nextPlayers,
+          players: nextHands,
         };
       }
 

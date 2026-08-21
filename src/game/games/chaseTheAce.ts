@@ -186,8 +186,10 @@ export const chaseTheAceGame: CardGame = {
   view(state, viewerId) {
     const pv = publicView(state, viewerId);
     const cur = state.game.gameState as ChaseState;
+    if (!cur?.cards) return pv;
     const cards = viewerId && cur.cards[viewerId] ? { [viewerId]: cur.cards[viewerId] } : {};
-    return { ...pv, game: { ...pv.game, gameState: { ...cur, cards } } };
+    const stockCount = Array.isArray(cur.stock) ? cur.stock.length : 0;
+    return { ...pv, game: { ...pv.game, gameState: { ...cur, cards, stock: undefined, stockCount } } };
   },
   isTerminal(state) {
     return !!(state.game.gameState as ChaseState).winner;

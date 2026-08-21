@@ -133,6 +133,7 @@ export const blackjackGame: CardGame = {
   view(state, viewerId) {
     const pv = publicView(state, viewerId);
     const gs = state.game.gameState as BlackjackState;
+    if (!gs || !Array.isArray(gs.dealer)) return pv;
     const dealer = gs.dealerHidden && gs.dealer.length > 0 ? [gs.dealer[0]] : gs.dealer;
     return { ...pv, game: { ...pv.game, gameState: { ...gs, dealer } } };
   },
