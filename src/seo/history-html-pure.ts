@@ -7,6 +7,7 @@ import {
   HISTORY_PAGE,
   type HistoryFigure,
 } from '../content/history';
+import { catalogTilesForSlugs, renderGameTileGrid } from './game-tile-pure';
 import { SSG_CSS, esc, jsonLdScript } from './ssg-html-pure';
 import { SITE_ORIGIN } from './static-routes-pure';
 
@@ -95,12 +96,7 @@ export function renderHistoryPage(baseUrl = SITE_ORIGIN): string {
     .map((f) => `<div class="faq"><h3>${esc(f.q)}</h3><p>${esc(f.a)}</p></div>`)
     .join('\n');
 
-  const plays = HISTORY_PAGE.playLinks
-    .map(
-      (g) =>
-        `<a href="/games/${esc(g.slug)}/"><span class="n">${esc(g.name)}</span>\n<span class="d">${esc(g.tease)}</span></a>`,
-    )
-    .join('\n');
+  const plays = renderGameTileGrid(catalogTilesForSlugs(HISTORY_PAGE.playLinks.map((g) => g.slug)));
 
   return `<!doctype html>
 <html lang="en">
@@ -135,14 +131,13 @@ ${sections}
 <section id="play">
 <h2>Play the games that grew from this pack</h2>
 <p>These are live on Let's Play Cards — same 52-card pack, in the browser.</p>
-<div class="gamelist">${plays}</div>
+${plays}
 </section>
-<div class="play"><a href="/">▶ Play a free card game — no account needed</a></div>
 <section id="faq"><h2>Frequently asked questions</h2>
 ${faqs}
 </section>
 <p class="note">This page follows the usual account in museum and playing-card scholarship: Chinese paper cards, the Mamluk pack in Istanbul, European records from the 1370s, and French suit marks around 1480. Where historians disagree — especially about the Tang “leaf game” — the page says so. No invented quotes.</p>
-<footer>History of playing cards from Let's Play Cards. <a href="/games/">Browse game rules</a> · <a href="/">Play now</a></footer>
+<footer>History of playing cards from Let's Play Cards. <a href="/games/">Browse game rules</a> · <a href="/">Home</a></footer>
 </div>
 </body>
 </html>`;
