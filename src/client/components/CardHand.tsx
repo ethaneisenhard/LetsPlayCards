@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { PlayingCard } from './PlayingCard';
 import type { Card } from '../../game/types';
-import { moveCardInHand, sortHandByRank, sortHandBySuit, syncHandOrder } from '../lib/hand-order-pure';
+import {
+  dropIndexFromOffset,
+  groupHandByPairs,
+  moveCardToIndex,
+  sortHandBySuit,
+  syncHandOrder,
+} from '../lib/hand-order-pure';
 
 interface CardHandProps {
   cards: Card[];
@@ -21,33 +27,23 @@ interface CardHandProps {
 
 function OrderBar({
   compact,
-  canNudge,
-  onRank,
+  onPairs,
   onSuit,
-  onNudge,
 }: {
   compact?: boolean;
-  canNudge: boolean;
-  onRank: () => void;
+  onPairs: () => void;
   onSuit: () => void;
-  onNudge: (delta: number) => void;
 }) {
   const btn = compact
-    ? 'px-2 py-1 rounded-md bg-white/10 text-white/70 text-[10px] uppercase tracking-wide disabled:opacity-30'
-    : 'px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs disabled:opacity-30';
+    ? 'min-h-11 px-4 rounded-lg bg-white/10 text-white/85 text-sm font-semibold disabled:opacity-30'
+    : 'px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-semibold disabled:opacity-30';
   return (
     <div className={`flex items-center justify-center gap-2 ${compact ? 'px-3 pb-2' : ''}`}>
-      <button type="button" className={btn} onClick={onRank}>
-        Number
-      </button>
       <button type="button" className={btn} onClick={onSuit}>
-        Shape
+        Suit
       </button>
-      <button type="button" className={btn} disabled={!canNudge} onClick={() => onNudge(-1)}>
-        ←
-      </button>
-      <button type="button" className={btn} disabled={!canNudge} onClick={() => onNudge(1)}>
-        →
+      <button type="button" className={btn} onClick={onPairs}>
+        Pairs
       </button>
     </div>
   );
@@ -61,23 +57,29 @@ export function CardHand({
   pickedCardId,
   pickedCardIds,
   pickHint,
-  playerName,
+  playerName: _playerName,
   isMyTurn = true,
   mobile = false,
   quiet = false,
-  hideOrder = false,
 }: CardHandProps) {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [ordered, setOrdered] = useState<Card[]>(() => [...cards]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const fanRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ id: string; x: number; y: number; active: boolean } | null>(null);
+  const skipClick = useRef(false);
 
   useEffect(() => {
     setOrdered((prev) => syncHandOrder(prev, cards));
   }, [cards]);
 
   const canAct = isMyTurn && Boolean(onPlay || onDiscard || onPick);
-  const focusId = onPick ? (pickedCardId ?? pickedCardIds?.[pickedCardIds.length - 1] ?? selectedCard) : selectedCard;
 
   function handleCardClick(card: Card) {
+    if (skipClick.current) {
+      skipClick.current = false;
+      return;
+    }
     setSelectedCard((selected) => (selected === card.id ? null : card.id));
     if (onPick && canAct) onPick(card);
   }
@@ -104,13 +106,48 @@ export function CardHand({
   const maxFan = mobile ? 336 : 560;
   const gap = n <= 1 ? 0 : Math.max(12, Math.min(30, (maxFan - cardW) / (n - 1)));
   const fanW = n <= 1 ? cardW : cardW + gap * (n - 1);
-  const maxRotate = mobile ? 6 : 9;
-  const arcLift = 8;
+  const maxRotate = draggingId ? 0 : mobile ? 6 : 9;
+  const arcLift = draggingId ? 0 : 8;
+
+  function slotAtClientX(clientX: number): number {
+    const rect = fanRef.current?.getBoundingClientRect();
+    if (!rect) return 0;
+    return dropIndexFromOffset(clientX - rect.left, ordered.length, gap, cardW);
+  }
+
+  function onCardPointerDown(card: Card, e: ReactPointerEvent) {
+    if (e.button !== 0) return;
+    drag.current = { id: card.id, x: e.clientX, y: e.clientY, active: false };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function onCardPointerMove(e: ReactPointerEvent) {
+    const state = drag.current;
+    if (!state) return;
+    const dist = Math.abs(e.clientX - state.x) + Math.abs(e.clientY - state.y);
+    if (!state.active && dist < 8) return;
+    if (!state.active) {
+      state.active = true;
+      setDraggingId(state.id);
+    }
+    const next = slotAtClientX(e.clientX);
+    setOrdered((cur) => moveCardToIndex(cur, state.id, next));
+  }
+
+  function onCardPointerUp() {
+    if (drag.current?.active) skipClick.current = true;
+    drag.current = null;
+    setDraggingId(null);
+  }
 
   const fan = n === 0 ? (
     <div className="h-8 flex items-center justify-center text-white/20 text-sm">No cards in hand</div>
   ) : (
-    <div className="relative mx-auto" style={{ width: fanW, height: cardH + 16 }}>
+    <div
+      ref={fanRef}
+      className="relative mx-auto touch-none"
+      style={{ width: fanW, height: cardH + 16 }}
+    >
       {ordered.map((card, i) => {
         const selected = onPick
           ? pickedCardIds?.includes(card.id) || pickedCardId === card.id || selectedCard === card.id
@@ -118,23 +155,29 @@ export function CardHand({
         const t = n === 1 ? 0.5 : i / (n - 1);
         const rotate = n === 1 ? 0 : (t - 0.5) * maxRotate * 2;
         const arc = n === 1 ? 0 : -Math.sin(t * Math.PI) * arcLift;
+        const dragging = draggingId === card.id;
         return (
           <div
             key={card.id}
-            className="absolute"
+            className="absolute cursor-grab active:cursor-grabbing"
             style={{
               top: arcLift,
               left: i * gap,
-              zIndex: selected ? 50 : i + 1,
+              zIndex: dragging ? 80 : selected ? 50 : i + 1,
               transform: `translateY(${arc}px) rotate(${rotate}deg)`,
               transformOrigin: 'bottom center',
-              transition: 'transform 0.15s ease',
+              transition: dragging ? 'none' : 'transform 0.15s ease, left 0.15s ease',
+              opacity: dragging ? 0.75 : 1,
             }}
+            onPointerDown={(e) => onCardPointerDown(card, e)}
+            onPointerMove={onCardPointerMove}
+            onPointerUp={onCardPointerUp}
+            onPointerCancel={onCardPointerUp}
           >
             <PlayingCard
               card={card}
               large
-              selected={selected}
+              selected={selected || dragging}
               onClick={() => handleCardClick(card)}
             />
           </div>
@@ -143,18 +186,15 @@ export function CardHand({
     </div>
   );
 
-  const orderBar = (
+  const orderBar = n > 1 && (
     <OrderBar
       compact={mobile}
-      canNudge={Boolean(focusId)}
-      onRank={() => setOrdered((cur) => sortHandByRank(cur))}
+      onPairs={() => setOrdered((cur) => groupHandByPairs(cur))}
       onSuit={() => setOrdered((cur) => sortHandBySuit(cur))}
-      onNudge={(delta) => {
-        if (!focusId) return;
-        setOrdered((cur) => moveCardInHand(cur, focusId, delta));
-      }}
     />
   );
+
+  const arrangeHint = 'Drag a card to move it · Suit groups shapes · Pairs groups the same number';
 
   if (mobile) {
     return (
@@ -171,7 +211,7 @@ export function CardHand({
         </div>
 
         {fan}
-        {ordered.length > 1 && !hideOrder && orderBar}
+        {orderBar}
 
         {selectedCard && canAct && (onPlay || onDiscard) && (
           <div className="flex gap-2 px-3 pb-3 animate-fade-in">
@@ -195,7 +235,7 @@ export function CardHand({
         )}
         {!quiet && !selectedCard && !pickedCardId && ordered.length > 0 && (
           <p className="text-white/20 text-[10px] text-center pb-3">
-            {pickHint ?? 'Tap a card · Number / Shape / ← → to arrange'}
+            {pickHint ?? arrangeHint}
           </p>
         )}
         {!quiet && onPick && pickedCardId && pickHint && (
@@ -212,7 +252,7 @@ export function CardHand({
       </div>
 
       {fan}
-      {ordered.length > 1 && orderBar}
+      {orderBar}
 
       {selectedCard && canAct && (onPlay || onDiscard) && (
         <div className="flex gap-3 animate-fade-in">
@@ -241,7 +281,7 @@ export function CardHand({
         </div>
       )}
       {!selectedCard && !pickedCardId && ordered.length > 0 && (
-        <p className="text-white/30 text-xs">{pickHint ?? 'Click a card · Number / Shape / ← → to arrange'}</p>
+        <p className="text-white/30 text-xs">{pickHint ?? arrangeHint}</p>
       )}
       {onPick && pickedCardId && pickHint && (
         <p className="text-gold/60 text-xs">{pickHint}</p>

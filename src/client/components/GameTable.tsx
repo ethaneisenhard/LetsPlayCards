@@ -787,7 +787,6 @@ export function GameTable({
                 isMyTurn={isMyTurn && !busy}
                 mobile
                 quiet={dock.quietHandHints}
-                hideOrder={dock.ask || dock.draw}
               />
             </div>
           )}
