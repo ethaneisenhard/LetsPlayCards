@@ -31,8 +31,9 @@ config.d1_databases = [
   {
     binding: 'DB',
     database_name: PREVIEW_D1_NAME,
+    // Absolute path: wrangler resolves migrations_dir relative to the config file.
     database_id: d1,
-    migrations_dir: './migrations',
+    migrations_dir: resolve('./migrations'),
   },
 ];
 
