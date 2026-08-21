@@ -13,6 +13,7 @@ import { resolveTableKind } from './playability-registry-pure';
 import { GLOSSARY } from '../../content/glossary';
 import { askTurnHint, seatActionLabel } from '../../client/lib/ask-action-pure';
 import { lastAskLine, setCountLabel, setScoreHeading } from '../../client/lib/last-ask-pure';
+import { actionPillLabels, resolveActionBar } from '../../client/lib/action-pills-pure';
 import { disabledActionReason, resolveTurnStrip, youSeatLine } from '../../client/lib/table-turn-pure';
 import { handReadout } from '../../client/lib/hand-readout-pure';
 import { undefinedJargon } from './plain-copy-pure';
@@ -357,7 +358,19 @@ export function auditGameRules(type: GameType): RulesAudit {
     'Your cards',
     'Put aside',
     'Leftover pile',
-    'Number or face',
+    'Take leftover',
+    'Anyone',
+    'Ask for 7s',
+    ...actionPillLabels(
+      resolveActionBar({
+        isMyTurn: true,
+        askRank: true,
+        selectedRank: '7',
+        selectedCardId: '7h',
+        includeAnyone: true,
+        targets: [{ id: 'bill', name: 'Bill' }],
+      }),
+    ),
   ].join('\n');
   for (const hit of undefinedJargon(tableCopy)) {
     fails.push({

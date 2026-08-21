@@ -13,8 +13,6 @@ import { youSeatLine } from '../lib/table-turn-pure';
 
 interface CardHandProps {
   cards: Card[];
-  onPlay?: (card: Card) => void;
-  onDiscard?: (card: Card) => void;
   onPick?: (card: Card) => void;
   pickedCardId?: string | null;
   pickedCardIds?: string[];
@@ -53,8 +51,6 @@ function OrderBar({
 
 export function CardHand({
   cards,
-  onPlay,
-  onDiscard,
   onPick,
   pickedCardId,
   pickedCardIds,
@@ -75,7 +71,7 @@ export function CardHand({
     setOrdered((prev) => syncHandOrder(prev, cards));
   }, [cards]);
 
-  const canAct = isMyTurn && Boolean(onPlay || onDiscard || onPick);
+  const canAct = isMyTurn && Boolean(onPick);
 
   function handleCardClick(card: Card) {
     if (skipClick.current) {
@@ -84,22 +80,6 @@ export function CardHand({
     }
     setSelectedCard((selected) => (selected === card.id ? null : card.id));
     if (onPick && canAct) onPick(card);
-  }
-
-  function handlePlay() {
-    const card = ordered.find((c) => c.id === selectedCard);
-    if (card && onPlay) {
-      onPlay(card);
-      setSelectedCard(null);
-    }
-  }
-
-  function handleDiscard() {
-    const card = ordered.find((c) => c.id === selectedCard);
-    if (card && onDiscard) {
-      onDiscard(card);
-      setSelectedCard(null);
-    }
   }
 
   const n = ordered.length;
@@ -212,35 +192,9 @@ export function CardHand({
             </p>
           </div>
           {orderBar}
-          {selectedCard && (
-            <button onClick={() => setSelectedCard(null)} className="min-h-11 px-3 text-white/80 text-sm shrink-0">
-              ✕ Cancel
-            </button>
-          )}
         </div>
 
         {fan}
-
-        {selectedCard && canAct && (onPlay || onDiscard) && (
-          <div className="flex gap-2 px-3 pb-3 animate-fade-in">
-            {onPlay && (
-              <button
-                onClick={handlePlay}
-                className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base transition-all active:scale-95"
-              >
-                ↑ Play
-              </button>
-            )}
-            {onDiscard && (
-              <button
-                onClick={handleDiscard}
-                className="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white/80 font-bold text-base transition-all active:scale-95"
-              >
-                Put aside
-              </button>
-            )}
-          </div>
-        )}
         {!quiet && !selectedCard && !pickedCardId && ordered.length > 1 && (
           <p className="text-white/60 text-xs text-center pb-3">{arrangeHint}</p>
         )}
@@ -258,33 +212,6 @@ export function CardHand({
 
       {fan}
       {orderBar}
-
-      {selectedCard && canAct && (onPlay || onDiscard) && (
-        <div className="flex gap-3 animate-fade-in">
-          {onPlay && (
-            <button
-              onClick={handlePlay}
-              className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all shadow-lg hover:scale-105 active:scale-95"
-            >
-              ↑ Play to Table
-            </button>
-          )}
-          {onDiscard && (
-            <button
-              onClick={handleDiscard}
-              className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white/80 font-semibold text-sm transition-all hover:scale-105 active:scale-95"
-            >
-              Put aside
-            </button>
-          )}
-          <button
-            onClick={() => setSelectedCard(null)}
-            className="px-4 py-2 rounded-lg text-white/40 hover:text-white/70 text-sm transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
       {!selectedCard && !pickedCardId && ordered.length > 1 && (
         <p className="text-white/60 text-xs">{arrangeHint}</p>
       )}

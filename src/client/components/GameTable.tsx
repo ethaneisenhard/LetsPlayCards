@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AskActionPanel } from './AskActionPanel';
+import { ActionPillBar } from './ActionPillBar';
 import { BattleLane } from './BattleLane';
 import { CenterPile } from './CenterPile';
 import { CardFlightLayer } from './CardFlightLayer';
-import { TurnStrip } from './TurnStrip';
+import { FeltTurnHint } from './FeltTurnHint';
 import { RulesOverlay } from './RulesOverlay';
 import { CardHand } from './CardHand';
 import { FeltBoardExtras } from './FeltBoardExtras';
@@ -33,21 +33,14 @@ import { useChrome } from '../lib/chrome';
 import { resolveActorId, resolveIsMyTurn } from '../lib/felt-turn-pure';
 import {
   ANYONE_TARGET_ID,
-  askButtonLabel,
-  drawButtonLabel,
-  isAnyoneChoice,
   legalAskTargets,
-  ranksHeld,
   resolveAskTargetId,
   seatActionLabel,
 } from '../lib/ask-action-pure';
 import { bookCounts, bookScoreLine, lastAskLine, setCountLabel, setScoreHeading } from '../lib/last-ask-pure';
+import { resolveActionBar, type ActionPill } from '../lib/action-pills-pure';
 import { resolveMobileDock, resolvePhoneTableLayout } from '../lib/mobile-dock-pure';
-import {
-  disabledActionReason,
-  resolveTurnStrip,
-  seatAriaLabel,
-} from '../lib/table-turn-pure';
+import { resolveTurnStrip, seatAriaLabel } from '../lib/table-turn-pure';
 import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { suitLaddersFromPlayed } from '../lib/suit-ladder-pure';
 import { resolveTableChrome } from '../lib/table-chrome-pure';
@@ -95,6 +88,8 @@ interface GameTableProps {
   busyHint?: string;
   showInvite?: boolean;
   canAct?: (action: { intent: string; [k: string]: unknown }) => boolean;
+  /** Put game name + Rules in the app header. Off for the playground picker. */
+  appNav?: boolean;
 }
 
 export function GameTable({
@@ -106,6 +101,7 @@ export function GameTable({
   busyHint,
   showInvite = true,
   canAct,
+  appNav = true,
 }: GameTableProps) {
   const config = GAME_CONFIGS[game.gameType] ?? GAME_CONFIGS.freeplay;
   const rules = rulesCardFor(config, GLOSSARY[game.gameType]);
@@ -118,7 +114,7 @@ export function GameTable({
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
   const [askRank, setAskRank] = useState<string | null>(null);
   const [askWho, setAskWho] = useState<string>(ANYONE_TARGET_ID);
-  const { setActiveGameType } = useChrome();
+  const { setActiveGameType, setNavTools } = useChrome();
   const theme = useMemo(
     () => resolveSurface(game.gameType, config.tableTheme),
     [game.gameType, config.tableTheme, themeTick],
@@ -161,6 +157,43 @@ export function GameTable({
       /* ignore */
     }
   }
+
+  useEffect(() => {
+    if (!appNav) return;
+    setNavTools(
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <span className="font-display font-bold text-[color:var(--text)] text-sm uppercase tracking-wide truncate">
+          {config.name}
+        </span>
+        {showInvite && (
+          <span className="text-gold font-mono font-bold tracking-widest text-xs shrink-0">{game.code}</span>
+        )}
+        {showInvite && (
+          <button
+            type="button"
+            onClick={copyInviteLink}
+            className="text-[color:var(--text)]/80 hover:text-[color:var(--text)] text-xs font-semibold min-h-11 px-2 shrink-0"
+          >
+            {copied ? 'Copied' : 'Invite'}
+          </button>
+        )}
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setRulesOpen((v) => !v)}
+            aria-expanded={rulesOpen}
+            className={`min-h-11 px-2 text-sm font-semibold ${
+              rulesOpen ? 'text-gold' : 'text-[color:var(--text)]/80 hover:text-gold'
+            }`}
+          >
+            Rules
+          </button>
+          {rulesOpen && <RulesOverlay card={rules} onClose={() => setRulesOpen(false)} />}
+        </div>
+      </div>,
+    );
+    return () => setNavTools(null);
+  }, [appNav, config.name, copied, game.code, rules, rulesOpen, setNavTools, showInvite]);
 
   const skipDealRef = useRef<() => void>(() => {});
   function trySend(action: { intent: string; [k: string]: unknown }) {
@@ -248,10 +281,8 @@ export function GameTable({
     : players.find((p) => p.seat === game.currentSeat);
   const rankFromCard = player.hand.find((c) => c.id === pickedCardId)?.rank ?? null;
   const pickedRank = rankFromCard ?? askRank;
-  const heldRanks = ranksHeld(player.hand);
   const askOpponents = legalAskTargets(opponents);
   const resolvedAskTargetId = resolveAskTargetId(askWho, opponents);
-  const resolvedAskTarget = askOpponents.find((o) => o.id === resolvedAskTargetId) ?? null;
   const books = bookCounts(gs.books);
   const askLine = lastAskLine(gs.lastAsk);
   const scoreLine = bookScoreLine(books, players);
@@ -309,11 +340,6 @@ export function GameTable({
       setAskRank(pickedCardId === card.id ? null : card.rank);
     }
   }
-  function handleAskRank(rank: string) {
-    setAskRank((cur) => (cur === rank ? null : rank));
-    const card = player.hand.find((c) => c.rank === rank);
-    setPickedCardId((id) => (askRank === rank ? null : card?.id ?? id));
-  }
   function submitAsk(who = askWho) {
     if (!chrome.askRankIntent || !pickedRank) return;
     const targetId = resolveAskTargetId(who, opponents);
@@ -329,7 +355,9 @@ export function GameTable({
       chrome.drawPicked ||
       chrome.cribDiscard ||
       chrome.showCorners ||
-      chrome.showFishing,
+      chrome.showFishing ||
+      allowPlay ||
+      allowDiscard,
   );
 
   function handleTarget(targetId: string) {
@@ -353,19 +381,6 @@ export function GameTable({
     return false;
   }
   const seatTarget = Boolean(chrome.drawFromIntent || chrome.askRankIntent);
-  const askSubmitLabel = chrome.askRankIntent
-    ? askButtonLabel(pickedRank, resolvedAskTarget?.name ?? null, isAnyoneChoice(askWho))
-    : drawButtonLabel(resolvedAskTarget?.name ?? askOpponents[0]?.name ?? null);
-  const askSubmitReady = chrome.askRankIntent
-    ? Boolean(
-        pickedRank &&
-          resolvedAskTargetId &&
-          (!canAct || canAct({ intent: chrome.askRankIntent, rank: pickedRank, targetId: resolvedAskTargetId })),
-      )
-    : Boolean(
-        resolvedAskTargetId &&
-          (!canAct || canAct({ intent: chrome.drawFromIntent!, targetId: resolvedAskTargetId })),
-      );
   const phoneLayout = resolvePhoneTableLayout();
   const dock = resolveMobileDock({
     askRankIntent: chrome.askRankIntent,
@@ -384,13 +399,7 @@ export function GameTable({
       chrome.showPeg ||
       typeof gs.pot === 'number',
   );
-  const showTalkPanel = Boolean(
-    showFeltStatus ||
-      chrome.turnButtons.length > 0 ||
-      chrome.askRankIntent ||
-      chrome.drawFromIntent,
-  );
-  const askPanelOpen = Boolean((chrome.askRankIntent || chrome.drawFromIntent) && isMyTurn && !busy);
+  const showTalkPanel = showFeltStatus;
 
   useEffect(() => {
     setPickedCardId(null);
@@ -571,77 +580,86 @@ export function GameTable({
     : null;
 
   const stock = chrome.handReveal === 'stock';
-  function askControls(phone = false) {
-    if (!askPanelOpen) return null;
-    return (
-      <AskActionPanel
-        title={chrome.askRankIntent ? 'Ask' : 'Draw'}
-        hint={undefined}
-        ranks={chrome.askRankIntent ? heldRanks : undefined}
-        selectedRank={pickedRank}
-        onSelectRank={chrome.askRankIntent ? handleAskRank : undefined}
-        targets={askOpponents.map((o) => ({ id: o.id, name: o.name }))}
-        selectedTargetId={
-          chrome.drawFromIntent && isAnyoneChoice(askWho)
-            ? (askOpponents[0]?.id ?? askWho)
-            : askWho
-        }
-        onSelectTarget={(id) => {
-          setAskWho(id);
-          if (chrome.askRankIntent && pickedRank) submitAsk(id);
-          else if (chrome.drawFromIntent) {
-            const targetId = resolveAskTargetId(id, opponents);
-            if (targetId) handleDrawFrom(targetId);
-          }
-        }}
-        includeAnyone={Boolean(chrome.askRankIntent)}
-        anyoneName={phone ? undefined : askOpponents[0]?.name}
-        disabled={busy || !isMyTurn}
-        submitLabel={askSubmitLabel}
-        submitDisabled={!askSubmitReady}
-        onSubmit={() => {
-          if (chrome.askRankIntent) submitAsk();
-          else if (resolvedAskTargetId) handleDrawFrom(resolvedAskTargetId);
-        }}
-        phone={phone}
-      />
-    );
-  }
-  function turnButtonRow(phone = false) {
-    if (chrome.turnButtons.length === 0 || !isMyTurn) return null;
-    return (
-      <div className="flex flex-wrap justify-center gap-2">
-        {chrome.turnButtons.map((b) => {
-          const action: { intent: string; [k: string]: unknown } = { intent: b.intent };
-          if (b.side) action.side = b.side;
-          const legal = !busy && (!canAct || canAct(action));
-          const reason = disabledActionReason({
-            intent: b.intent,
-            isMyTurn,
-            busy,
-            legal,
-          });
-          return (
-            <button
-              key={`${b.intent}-${b.side ?? ''}-${b.label}`}
-              type="button"
-              onClick={() => handleTurnButton(b)}
-              disabled={!legal}
-              title={reason ?? undefined}
-              aria-disabled={!legal}
-              className={
-                phone
-                  ? 'min-h-12 px-5 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:bg-white/10 disabled:text-white/45 disabled:cursor-not-allowed disabled:line-through text-white text-base font-bold'
-                  : 'px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:bg-white/10 disabled:text-white/45 disabled:cursor-not-allowed disabled:line-through text-white text-sm font-semibold'
-              }
-            >
-              {b.label}
-              {reason && <span className="sr-only"> ({reason})</span>}
-            </button>
-          );
-        })}
-      </div>
-    );
+  const selectedCard = player.hand.find((c) => c.id === pickedCardId) ?? null;
+  const actionBar = resolveActionBar({
+    isMyTurn,
+    busy,
+    selectedCardId: pickedCardId,
+    selectedRank: pickedRank,
+    askRank: Boolean(chrome.askRankIntent),
+    drawFrom: Boolean(chrome.drawFromIntent),
+    allowPlay,
+    allowDiscard,
+    canPlaySelected: Boolean(
+      selectedCard && allowPlay && (!canAct || canAct({ intent: 'play', cardId: selectedCard.id })),
+    ),
+    canDiscardSelected: Boolean(
+      selectedCard &&
+        allowDiscard &&
+        (!canAct || canAct({ intent: 'discard', cardId: selectedCard.id })),
+    ),
+    canDraw,
+    canDrawDiscard,
+    canSlap,
+    slapLabel: chrome.slapIntent === 'snap' ? 'Snap' : 'Slap',
+    turnButtons: chrome.turnButtons.map((b) => {
+      const action: { intent: string; [k: string]: unknown } = { intent: b.intent };
+      if (b.side) action.side = b.side;
+      return {
+        id: `${b.intent}-${b.side ?? ''}`,
+        label: b.label,
+        legal: !busy && (!canAct || canAct(action)),
+      };
+    }),
+    targets: askOpponents.map((o) => ({ id: o.id, name: o.name })),
+    includeAnyone: Boolean(chrome.askRankIntent),
+    selectedTargetId: askWho,
+    anyoneId: ANYONE_TARGET_ID,
+  });
+  function handlePill(pill: ActionPill) {
+    if (pill.id === 'submit-ask') {
+      if (chrome.askRankIntent) submitAsk();
+      else if (resolvedAskTargetId) handleDrawFrom(resolvedAskTargetId);
+      return;
+    }
+    if (pill.id === 'play' && selectedCard) {
+      handlePlay(selectedCard);
+      setPickedCardId(null);
+      setAskRank(null);
+      return;
+    }
+    if (pill.id === 'discard' && selectedCard) {
+      handleDiscard(selectedCard);
+      setPickedCardId(null);
+      setAskRank(null);
+      return;
+    }
+    if (pill.id === 'draw') {
+      handleDraw();
+      return;
+    }
+    if (pill.id === 'draw-discard') {
+      handleDrawDiscard();
+      return;
+    }
+    if (pill.id === 'slap') {
+      handleSlap();
+      return;
+    }
+    const turn = chrome.turnButtons.find((b) => `${b.intent}-${b.side ?? ''}` === pill.id);
+    if (turn) {
+      handleTurnButton(turn);
+      return;
+    }
+    if (chrome.askRankIntent) {
+      setAskWho(pill.id);
+      if (pickedRank) submitAsk(pill.id);
+      return;
+    }
+    if (chrome.drawFromIntent) {
+      const targetId = resolveAskTargetId(pill.id, opponents);
+      if (targetId) handleDrawFrom(targetId);
+    }
   }
 
   const legalButtonLabels = chrome.turnButtons
@@ -674,59 +692,21 @@ export function GameTable({
   });
   const oppTurnId = !isMyTurn ? (currentTurnPlayer?.id ?? null) : null;
 
+  const feltHint = (
+    <FeltTurnHint
+      line={
+        isMyTurn && hasDrawLimit && !dealing && !busy
+          ? `${strip.line} · ${drawsLeft > 0 ? `${drawsLeft} take${drawsLeft !== 1 ? 's' : ''} left` : 'no takes left'}`
+          : strip.line
+      }
+      tone={strip.tone}
+      skipDeal={dealing ? finishDeal : undefined}
+    />
+  );
+  const pills = <ActionPillBar bar={actionBar} onPill={handlePill} />;
+
   return (
     <div className="relative flex flex-col w-full h-full min-h-0 select-none" style={{ background: theme.pageBg }}>
-      <div className="relative z-30 flex items-center justify-between px-2 sm:px-6 py-1 sm:py-2 border-b border-white/10 shrink-0 min-h-9 sm:min-h-11">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <a href="/" className="text-white/80 hover:text-white text-xs font-semibold min-h-9 sm:min-h-11 inline-flex items-center">
-            Change game
-          </a>
-          {showInvite && (
-            <span className="text-gold font-mono font-bold tracking-widest text-xs">{game.code}</span>
-          )}
-        </div>
-        <h1 className="absolute inset-x-20 sm:inset-x-36 inset-y-0 flex items-center justify-center pointer-events-none">
-          <span className="text-white font-display font-bold text-sm sm:text-base tracking-wide uppercase truncate">
-            {config.name}
-          </span>
-        </h1>
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-1 justify-end">
-          {showInvite && (
-            <button onClick={copyInviteLink} className="text-white/80 hover:text-white text-xs font-semibold min-h-9 sm:min-h-11 px-1">
-              {copied ? 'Copied' : 'Invite'}
-            </button>
-          )}
-          <span className="text-white/70 text-xs hidden sm:inline" aria-label={`${players.length} players`}>
-            {players.length}P
-          </span>
-          <span className="text-white/80 text-xs tabular-nums hidden sm:inline">
-            {game.deckCount > 0 ? `${game.deckCount} in pile` : 'Pile empty'}
-          </span>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setRulesOpen((v) => !v)}
-              aria-expanded={rulesOpen}
-              className={`min-h-9 sm:min-h-11 px-2 text-sm font-semibold ${rulesOpen ? 'text-amber-200' : 'text-white hover:text-amber-200'}`}
-            >
-              Rules
-            </button>
-            {rulesOpen && <RulesOverlay card={rules} onClose={() => setRulesOpen(false)} />}
-          </div>
-        </div>
-      </div>
-
-      <TurnStrip
-        compact
-        line={
-          isMyTurn && hasDrawLimit && !dealing && !busy
-            ? `${strip.line} · ${drawsLeft > 0 ? `${drawsLeft} take${drawsLeft !== 1 ? 's' : ''} left` : 'no takes left'}`
-            : strip.line
-        }
-        tone={strip.tone}
-        skipDeal={dealing ? finishDeal : undefined}
-      />
-
       {/* ── MOBILE LAYOUT ── */}
       <div className="flex-1 flex flex-col overflow-hidden sm:hidden min-h-0 w-full">
         {opponents.length > 0 && (
@@ -765,7 +745,9 @@ export function GameTable({
         </div>
         )}
 
-        <div className={`flex items-center justify-center gap-3 px-3 py-2 w-full ${phoneLayout.feltClass} ${chrome.showTableau ? 'overflow-auto items-start' : 'overflow-hidden'}`} style={{ background: theme.mobileFelt }}>
+        <div className={`relative flex flex-col items-center justify-center gap-2 px-3 py-2 w-full ${phoneLayout.feltClass} ${chrome.showTableau ? 'overflow-auto items-start' : 'overflow-hidden'}`} style={{ background: theme.mobileFelt }}>
+          {feltHint}
+          <div className="flex items-center justify-center gap-3 w-full min-h-0">
           {(chrome.showSharedPiles || dealing) && (
           <div className="flex flex-col items-center gap-1 w-12 shrink-0">
             <button
@@ -921,6 +903,7 @@ export function GameTable({
             </span>
           </div>
           )}
+          </div>
         </div>
 
         <div className={`border-t border-white/5 ${phoneLayout.dockClass}`} style={{ background: theme.handBg }}>
@@ -936,8 +919,6 @@ export function GameTable({
             <div data-card-anchor={originAnchor(player.id)}>
               <CardHand
                 cards={shownHand}
-                onPlay={allowPlay ? handlePlay : undefined}
-                onDiscard={allowDiscard ? handleDiscard : undefined}
                 onPick={canPickHand ? handlePick : undefined}
                 pickedCardId={pickedCardId}
                 pickedCardIds={chrome.drawPicked || chrome.cribDiscard ? pickedIds : undefined}
@@ -948,12 +929,7 @@ export function GameTable({
               />
             </div>
           )}
-          {dock.underHand && (askPanelOpen || (chrome.turnButtons.length > 0 && isMyTurn && !busy)) && (
-            <div className={phoneLayout.askDockClass}>
-              {askControls(true)}
-              {turnButtonRow(true)}
-            </div>
-          )}
+          <div className={phoneLayout.askDockClass}>{pills}</div>
         </div>
       </div>
 
@@ -1000,7 +976,9 @@ export function GameTable({
         </div>
         )}
 
-        <div className={`relative z-10 flex-1 flex items-center justify-center gap-8 py-4 min-h-0 ${chrome.showTableau ? 'overflow-auto items-start pt-8' : ''}`}>
+        <div className={`relative z-10 flex-1 flex flex-col items-center justify-center gap-3 py-4 min-h-0 ${chrome.showTableau ? 'overflow-auto items-start pt-8' : ''}`}>
+          {feltHint}
+          <div className="flex items-center justify-center gap-8 min-h-0 w-full">
           {(chrome.showSharedPiles || dealing) && (
           <div className="flex flex-col items-center gap-2 w-[70px] shrink-0" data-card-anchor={STOCK_ANCHOR}>
             <button
@@ -1046,7 +1024,6 @@ export function GameTable({
           )}
           {showTalkPanel && (
             <div className="flex flex-col items-center gap-3 max-w-lg">
-              {askControls()}
               {typeof gs.pot === 'number' && <p className="text-gold/70 text-sm">Pot {gs.pot}</p>}
               <FeltBoardExtras
                 showCorners={chrome.showCorners}
@@ -1121,7 +1098,6 @@ export function GameTable({
                   </div>
                 </div>
               ))}
-              {turnButtonRow()}
               {askLine && <p className="text-white/60 text-sm text-center">{askLine}</p>}
               {scoreLine && <p className="text-gold/60 text-xs text-center">{setScoreHeading()} · {scoreLine}</p>}
             </div>
@@ -1164,9 +1140,10 @@ export function GameTable({
             </span>
           </div>
           )}
+          </div>
         </div>
 
-        <div className="relative z-10 px-4 pb-4 shrink-0 min-h-0 flex items-center justify-center">
+        <div className="relative z-10 px-4 pb-4 shrink-0 min-h-0 flex flex-col items-center justify-center">
           {stock ? (
             <FaceDownStock
               playerId={player.id}
@@ -1178,8 +1155,6 @@ export function GameTable({
             <div data-card-anchor={originAnchor(player.id)}>
               <CardHand
                 cards={shownHand}
-                onPlay={allowPlay ? handlePlay : undefined}
-                onDiscard={allowDiscard ? handleDiscard : undefined}
                 onPick={canPickHand ? handlePick : undefined}
                 pickedCardId={pickedCardId}
                 pickedCardIds={chrome.drawPicked || chrome.cribDiscard ? pickedIds : undefined}
@@ -1189,6 +1164,7 @@ export function GameTable({
               />
             </div>
           )}
+          {pills}
         </div>
       </div>
       <div

@@ -1,7 +1,7 @@
 /**
- * Phone GameTable rule: opponents + felt/status above the hand,
- * move controls directly under the cards (above the home indicator).
- * Desktop may keep actions near the table center.
+ * Phone GameTable rule: opponents + felt + hand.
+ * Action pills mount under the hand only when a card is picked
+ * or a turn-only move is legal — never an always-on dock.
  */
 export type MobileDock = {
   ask: boolean;
@@ -32,9 +32,9 @@ export function resolveMobileDock(input: {
   };
 }
 
-/** Phone column: felt keeps a floor; the hand dock cannot claim most of the screen. */
-export const PHONE_FELT_MIN_PCT = 28;
-export const PHONE_DOCK_MAX_PCT = 42;
+/** Phone column: felt keeps most of the height; the hand is shrink-wrap, not a 42% dock. */
+export const PHONE_FELT_MIN_PCT = 40;
+export const PHONE_DOCK_MAX_PCT = 32;
 
 export type PhoneTableLayout = {
   feltMinPct: number;
@@ -49,11 +49,11 @@ export function resolvePhoneTableLayout(): PhoneTableLayout {
   return {
     feltMinPct: PHONE_FELT_MIN_PCT,
     dockMaxPct: PHONE_DOCK_MAX_PCT,
-    feltClass: 'flex-1 min-h-[28%]',
-    dockClass: 'shrink-0 max-h-[42%] overflow-y-auto pb-[env(safe-area-inset-bottom)]',
+    feltClass: 'flex-1 min-h-[40%]',
+    dockClass: 'shrink-0 max-h-[32%] overflow-y-auto pb-[env(safe-area-inset-bottom)]',
     opponentRowClass:
       'flex items-center justify-center gap-3 px-3 py-1.5 border-b border-white/5 shrink-0',
-    askDockClass: 'flex flex-col items-center gap-1 px-2 pt-1 pb-2',
+    askDockClass: 'shrink-0 overflow-hidden',
   };
 }
 

@@ -55,6 +55,7 @@ export function Playground() {
         seed={seed}
         showEngineState={showState}
         onCloseEngineState={() => setShowState(false)}
+        appNav={false}
       />
     </div>
   );

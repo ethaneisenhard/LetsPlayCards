@@ -48,24 +48,23 @@ describe('resolvePhoneTableLayout', () => {
     const layout = resolvePhoneTableLayout();
     expect(layout.feltMinPct).toBe(PHONE_FELT_MIN_PCT);
     expect(layout.dockMaxPct).toBe(PHONE_DOCK_MAX_PCT);
-    expect(layout.feltMinPct).toBe(28);
-    expect(layout.dockMaxPct).toBe(42);
+    expect(layout.feltMinPct).toBe(40);
+    expect(layout.dockMaxPct).toBe(32);
     expect(layout.feltClass).toContain('flex-1');
-    expect(layout.feltClass).toContain('min-h-[28%]');
-    expect(layout.dockClass).toContain('max-h-[42%]');
+    expect(layout.feltClass).toContain('min-h-[40%]');
+    expect(layout.dockClass).toContain('max-h-[32%]');
     expect(layout.dockClass).toContain('safe-area-inset-bottom');
-    expect(layout.askDockClass).toMatch(/gap-1/);
   });
 
-  it('leaves felt on a 390-wide Go Fish column after the cap', () => {
+  it('leaves felt on a 390-wide Go Fish column when the hand is just the fan', () => {
     const columnPx = 700;
     const compactOpponent = 72;
-    const typicalAskDock = 300;
+    const typicalHand = 180;
     expect(
       feltSurvivesDock({
         columnPx,
         opponentPx: compactOpponent,
-        uncappedDockPx: typicalAskDock,
+        uncappedDockPx: typicalHand,
       }),
     ).toBe(true);
     expect(

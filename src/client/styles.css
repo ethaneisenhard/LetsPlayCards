@@ -59,7 +59,7 @@
   .animate-card-win-shake { animation: card-win-shake 0.42s ease-in-out 2; }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
   .scrollbar-none::-webkit-scrollbar { display: none; }
-  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
 }
 
 @keyframes fade-in {
