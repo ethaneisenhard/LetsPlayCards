@@ -3,7 +3,7 @@
  * Print preview worker name and URL as GitHub Actions outputs.
  * Usage: pnpm exec tsx scripts/preview-meta.ts [--pr N] [--branch name]
  */
-import { previewUrl, previewWorkerName } from '../src/ci/preview-pure';
+import { assertPreviewWorkerName, previewUrl, previewWorkerName } from '../src/ci/preview-pure';
 
 function arg(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
@@ -13,10 +13,12 @@ function arg(flag: string): string | undefined {
 const prRaw = arg('--pr');
 const prNumber = prRaw ? Number(prRaw) : undefined;
 const branch = arg('--branch') ?? process.env.GITHUB_HEAD_REF ?? process.env.GITHUB_REF_NAME;
-const worker = previewWorkerName({
-  prNumber: prNumber && prNumber > 0 ? prNumber : null,
-  branch,
-});
+const worker = assertPreviewWorkerName(
+  previewWorkerName({
+    prNumber: prNumber && prNumber > 0 ? prNumber : null,
+    branch,
+  }),
+);
 const url = previewUrl(worker);
 
 const out = process.env.GITHUB_OUTPUT;

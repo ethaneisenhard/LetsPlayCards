@@ -1,14 +1,28 @@
 name: Preview
 
 # Per-PR Workers (Durable Objects block Cloudflare's built-in preview URLs).
+#
+# GitHub only starts this workflow when the file exists on the *merge* of the
+# PR (head + base). PRs that target a stale branch without this file never
+# run — retarget main or merge main into the PR. Checkout always uses the
+# merge ref so preview scripts from the base and the PR's app code are both
+# present even when the head branch predates this workflow.
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to build a preview for
+        required: true
+        type: string
 
 concurrency:
-  group: preview-${{ github.event.pull_request.number || github.ref }}
+  group: preview-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
   cancel-in-progress: true
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
 
 jobs:
   preview:
@@ -21,7 +35,18 @@ jobs:
       url: ${{ steps.meta.outputs.url }}
       worker: ${{ steps.meta.outputs.worker }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ env.PR_NUMBER }}/merge
+
+      - name: Require preview scripts
+        run: |
+          test -f scripts/preview-meta.ts
+          test -f scripts/write-preview-config.ts
+          test -f scripts/assert-preview-live.ts
+          test -f src/ci/preview-pure.ts
+          git log -1 --oneline
 
       - uses: pnpm/action-setup@v4
         with:
@@ -39,7 +64,14 @@ jobs:
 
       - name: Preview worker name + URL
         id: meta
-        run: pnpm exec tsx scripts/preview-meta.ts --pr "${{ github.event.pull_request.number }}" --branch "${{ github.head_ref || github.ref_name }}"
+        run: pnpm exec tsx scripts/preview-meta.ts --pr "${{ env.PR_NUMBER }}" --branch "${{ github.head_ref || github.ref_name }}"
+
+      - name: Refuse production Worker name
+        run: |
+          if [ "${{ steps.meta.outputs.worker }}" = "letsplaycards" ]; then
+            echo "Refusing to deploy preview onto production worker letsplaycards"
+            exit 1
+          fi
 
       - name: Ensure shared preview D1
         id: d1
@@ -70,8 +102,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: Probe preview URL
+        run: pnpm exec tsx scripts/assert-preview-live.ts --url "${{ steps.meta.outputs.url }}/"
+
       - name: Comment preview URL on PR
-        if: github.event.pull_request.number
+        if: env.PR_NUMBER
         uses: actions/github-script@v7
         with:
           script: |
@@ -86,12 +121,12 @@ jobs:
               '',
               `Worker \`${worker}\` · shared preview D1 (not production).`,
               '',
-              '_Updated with each push to this PR._',
+              '_Updated with each push to this PR. Job fails unless this URL returns HTTP 200._',
             ].join('\n');
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: Number(process.env.PR_NUMBER),
             });
             const existing = comments.find((c) => c.user?.type === 'Bot' && c.body?.includes(marker));
             if (existing) {
@@ -105,7 +140,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: Number(process.env.PR_NUMBER),
                 body,
               });
             }
@@ -117,7 +152,10 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout default branch (preview scripts)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -136,7 +174,12 @@ jobs:
 
       - name: Delete preview Worker
         continue-on-error: true
-        run: pnpm exec wrangler delete "${{ steps.meta.outputs.worker }}" --force
+        run: |
+          if [ "${{ steps.meta.outputs.worker }}" = "letsplaycards" ]; then
+            echo "Refusing to delete production worker"
+            exit 1
+          fi
+          pnpm exec wrangler delete "${{ steps.meta.outputs.worker }}" --force
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

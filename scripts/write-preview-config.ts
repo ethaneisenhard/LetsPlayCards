@@ -8,7 +8,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
-import { PREVIEW_D1_NAME } from '../src/ci/preview-pure';
+import { PREVIEW_D1_NAME, assertPreviewWorkerName } from '../src/ci/preview-pure';
 
 function arg(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
@@ -19,13 +19,14 @@ function abs(path: string): string {
   return isAbsolute(path) ? path : resolve(path);
 }
 
-const name = arg('--name');
+const nameRaw = arg('--name');
 const d1 = arg('--d1');
 const out = arg('--out') ?? '.scratch/wrangler.preview.json';
-if (!name || !d1) {
+if (!nameRaw || !d1) {
   console.error('Usage: write-preview-config.ts --name <worker> --d1 <uuid> [--out path]');
   process.exit(1);
 }
+const name = assertPreviewWorkerName(nameRaw);
 
 const raw = readFileSync(resolve('wrangler.jsonc'), 'utf8');
 const stripped = raw
@@ -34,6 +35,7 @@ const stripped = raw
 const config = JSON.parse(stripped) as Record<string, unknown>;
 
 config.name = name;
+config.workers_dev = true;
 if (typeof config.main === 'string') config.main = abs(config.main);
 if (config.assets && typeof config.assets === 'object') {
   const assets = config.assets as { directory?: string };
