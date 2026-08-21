@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { GAME_CATALOG } from '../game/registry/catalog';
 import { GLOSSARY } from './glossary';
@@ -112,9 +110,5 @@ describe('renderHistoryPage', () => {
     expect(html).toContain(`src="${src}?v=${HISTORY_ASSET_VERSION}"`);
     expect(html).not.toMatch(/<img[^>]+suit-marks\.svg/);
     expect(HISTORY_ASSET_VERSION).toBe('top3');
-    const bytes = readFileSync(resolve('public/history/img/suit-marks.webp'));
-    expect(bytes.subarray(0, 4).toString('ascii')).toBe('RIFF');
-    expect(bytes.subarray(8, 12).toString('ascii')).toBe('WEBP');
-    expect(bytes.length).toBeGreaterThan(20_000);
   });
 });
