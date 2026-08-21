@@ -14,6 +14,7 @@ describe('resolveFeltActions', () => {
     expect(resolveFeltActions({ tableKind: 'hit-stand' })).toMatchObject({ allowPlay: false, allowDraw: false });
     expect(resolveFeltActions({ tableKind: 'trick' }).allowPlay).toBe(true);
     expect(resolveFeltActions({ tableKind: 'open-felt', family: 'meld' }).allowPlay).toBe(false);
+    expect(resolveFeltActions({ tableKind: 'open-felt', family: 'meld', gameType: 'gin_rummy' }).allowDrawDiscard).toBe(true);
     expect(resolveFeltActions({ tableKind: 'open-felt', gameType: 'crazy_eights' }).allowDraw).toBe(true);
     expect(resolveFeltActions({ tableKind: 'open-felt', gameType: 'president' }).allowDraw).toBe(false);
   });

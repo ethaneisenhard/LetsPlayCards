@@ -9,12 +9,14 @@ export function LocalMatch({
   seed,
   showEngineState = false,
   onCloseEngineState,
+  appNav = true,
 }: {
   gameType: GameType;
   playerCount: number;
   seed: number;
   showEngineState?: boolean;
   onCloseEngineState?: () => void;
+  appNav?: boolean;
 }) {
   const config = GAME_CONFIGS[gameType] ?? GAME_CONFIGS.freeplay;
   const { view, human, send, canAct, busy, error, buildError, botName } = useLocalBotMatch(
@@ -50,6 +52,7 @@ export function LocalMatch({
         busyHint={`${botName} is playing…`}
         showInvite={false}
         canAct={canAct}
+        appNav={appNav}
       />
       {showEngineState && (
         <>

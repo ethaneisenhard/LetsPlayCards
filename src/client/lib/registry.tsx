@@ -12,6 +12,8 @@ export type TableProps = {
   busyHint?: string;
   showInvite?: boolean;
   canAct?: (action: { intent: string; [k: string]: unknown }) => boolean;
+  /** Put game name + Rules in the app header. Off for the playground picker. */
+  appNav?: boolean;
 };
 
 /** One felt table for every game. Surface look comes from the theme registry. */

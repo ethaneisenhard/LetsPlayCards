@@ -6,7 +6,7 @@ import { ProfileAvatar } from './ProfileAvatar';
 import { ProfileMenu } from './ProfileMenu';
 
 export function AppHeader() {
-  const { navTools } = useChrome();
+  const { navTools, navEnd } = useChrome();
   const [name, setName] = useState(() => loadDisplayName());
   const [avatar, setAvatar] = useState(() => loadAvatarEmoji());
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,14 +30,15 @@ export function AppHeader() {
             <span className="text-red-500">♦</span>
             <span className="text-[color:var(--text)]">♣</span>
           </span>
-          <span className="font-display font-bold text-[color:var(--text)] text-sm sm:text-base truncate tracking-tight hidden sm:inline">
+          <span className="font-display font-bold text-[color:var(--text)] text-sm sm:text-base tracking-tight hidden sm:inline">
             Let&apos;s Play <span className="text-gold">Cards</span>
           </span>
         </a>
 
         {navTools && <div className="flex-1 min-w-0 flex items-center">{navTools}</div>}
 
-        <div className="relative shrink-0 ml-auto">
+        <div className="relative shrink-0 ml-auto flex items-center gap-1">
+          {navEnd}
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Profile"
@@ -45,7 +46,7 @@ export function AppHeader() {
             className="flex items-center gap-2 rounded-full hover:opacity-90 transition-opacity"
           >
             <ProfileAvatar emoji={avatar} />
-            <span className="hidden sm:inline text-[color:var(--text)] text-sm font-semibold max-w-[8rem] truncate">
+            <span className="hidden sm:inline text-[color:var(--text)] text-sm font-semibold break-words">
               {name || 'Guest'}
             </span>
           </button>

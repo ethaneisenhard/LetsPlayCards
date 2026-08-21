@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { PlayingCard } from './PlayingCard';
 import type { Card } from '../../game/types';
 import {
@@ -8,11 +8,13 @@ import {
   sortHandBySuit,
   syncHandOrder,
 } from '../lib/hand-order-pure';
+import { loadShowHandReadout } from '../lib/hand-readout-pref';
+import { handCountLine, handReadout } from '../lib/hand-readout-pure';
+import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
+import { youSeatLine } from '../lib/table-turn-pure';
 
 interface CardHandProps {
   cards: Card[];
-  onPlay?: (card: Card) => void;
-  onDiscard?: (card: Card) => void;
   onPick?: (card: Card) => void;
   pickedCardId?: string | null;
   pickedCardIds?: string[];
@@ -20,9 +22,11 @@ interface CardHandProps {
   playerName: string;
   isMyTurn?: boolean;
   mobile?: boolean;
-  /** Hide arrange / pick hints when actions sit under the fan. */
+  /** Hide arrange / pick hints when pills sit above the fan. */
   quiet?: boolean;
   hideOrder?: boolean;
+  /** Ask / Play / Hit pills — immediately above the cards. */
+  aboveFan?: ReactNode;
 }
 
 function OrderBar({
@@ -35,10 +39,10 @@ function OrderBar({
   onSuit: () => void;
 }) {
   const btn = compact
-    ? 'min-h-11 px-4 rounded-lg bg-white/10 text-white/85 text-sm font-semibold disabled:opacity-30'
+    ? 'min-h-11 min-w-11 px-3 rounded-lg bg-white/10 text-white/85 text-sm font-semibold disabled:opacity-30'
     : 'px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-semibold disabled:opacity-30';
   return (
-    <div className={`flex items-center justify-center gap-2 ${compact ? 'px-3 pb-2' : ''}`}>
+    <div className="flex items-center justify-center gap-1 shrink-0">
       <button type="button" className={btn} onClick={onSuit}>
         Suit
       </button>
@@ -51,20 +55,20 @@ function OrderBar({
 
 export function CardHand({
   cards,
-  onPlay,
-  onDiscard,
   onPick,
   pickedCardId,
   pickedCardIds,
-  pickHint,
-  playerName: _playerName,
+  pickHint: _pickHint,
+  playerName,
   isMyTurn = true,
   mobile = false,
   quiet = false,
+  aboveFan,
 }: CardHandProps) {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [ordered, setOrdered] = useState<Card[]>(() => [...cards]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [showReadout, setShowReadout] = useState(() => loadShowHandReadout());
   const fanRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ id: string; x: number; y: number; active: boolean } | null>(null);
   const skipClick = useRef(false);
@@ -73,7 +77,13 @@ export function CardHand({
     setOrdered((prev) => syncHandOrder(prev, cards));
   }, [cards]);
 
-  const canAct = isMyTurn && Boolean(onPlay || onDiscard || onPick);
+  useEffect(() => {
+    const sync = () => setShowReadout(loadShowHandReadout());
+    window.addEventListener(PREFS_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(PREFS_CHANGED_EVENT, sync);
+  }, []);
+
+  const canAct = isMyTurn && Boolean(onPick);
 
   function handleCardClick(card: Card) {
     if (skipClick.current) {
@@ -82,22 +92,6 @@ export function CardHand({
     }
     setSelectedCard((selected) => (selected === card.id ? null : card.id));
     if (onPick && canAct) onPick(card);
-  }
-
-  function handlePlay() {
-    const card = ordered.find((c) => c.id === selectedCard);
-    if (card && onPlay) {
-      onPlay(card);
-      setSelectedCard(null);
-    }
-  }
-
-  function handleDiscard() {
-    const card = ordered.find((c) => c.id === selectedCard);
-    if (card && onDiscard) {
-      onDiscard(card);
-      setSelectedCard(null);
-    }
   }
 
   const n = ordered.length;
@@ -195,96 +189,51 @@ export function CardHand({
   );
 
   const arrangeHint = 'Drag a card to move it · Suit groups shapes · Pairs groups the same number';
+  const readout = ordered.length > 0 ? `${handCountLine(ordered.length)}: ${handReadout(ordered)}` : handCountLine(0);
+  const seat = youSeatLine(playerName, isMyTurn);
+  const readoutLine = (
+    <p
+      className={
+        showReadout
+          ? `${mobile ? 'text-white/80 text-[11px] px-2' : 'text-white/85 text-sm text-center px-4'} leading-snug break-words`
+          : 'sr-only'
+      }
+      aria-live="polite"
+    >
+      {readout}
+    </p>
+  );
 
   if (mobile) {
     return (
-      <div className="flex flex-col">
-        <div className="flex items-center justify-between px-3 pt-2 pb-1">
-          <span className="text-white/30 text-[10px] uppercase tracking-widest">
-            Your cards · {ordered.length}
+      <div className="flex flex-col gap-2" role="region" aria-label={`${seat}. ${readout}`}>
+        <div className="flex items-start gap-2 px-2">
+          <span className="min-w-0 flex-1 text-white text-xs font-semibold break-words">
+            {seat}
           </span>
-          {selectedCard && (
-            <button onClick={() => setSelectedCard(null)} className="text-white/30 text-[10px]">
-              ✕ Cancel
-            </button>
-          )}
+          {orderBar}
         </div>
+        {readoutLine}
 
+        {aboveFan}
         {fan}
-        {orderBar}
-
-        {selectedCard && canAct && (onPlay || onDiscard) && (
-          <div className="flex gap-2 px-3 pb-3 animate-fade-in">
-            {onPlay && (
-              <button
-                onClick={handlePlay}
-                className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base transition-all active:scale-95"
-              >
-                ↑ Play
-              </button>
-            )}
-            {onDiscard && (
-              <button
-                onClick={handleDiscard}
-                className="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white/80 font-bold text-base transition-all active:scale-95"
-              >
-                Put aside
-              </button>
-            )}
-          </div>
-        )}
-        {!quiet && !selectedCard && !pickedCardId && ordered.length > 0 && (
-          <p className="text-white/20 text-[10px] text-center pb-3">
-            {pickHint ?? arrangeHint}
-          </p>
-        )}
-        {!quiet && onPick && pickedCardId && pickHint && (
-          <p className="text-gold/50 text-[10px] text-center pb-3">{pickHint}</p>
+        {!quiet && !selectedCard && !pickedCardId && ordered.length > 1 && (
+          <p className="text-white/60 text-xs text-center pb-3">{arrangeHint}</p>
         )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="text-gold/60 text-xs tracking-widest uppercase font-medium">
-        Your cards · {ordered.length} card{ordered.length !== 1 ? 's' : ''}
-      </div>
+    <div className="flex flex-col items-center gap-3" role="region" aria-label={`${seat}. ${readout}`}>
+      <div className="text-white text-sm font-semibold">{seat}</div>
+      {readoutLine}
 
+      {aboveFan}
       {fan}
       {orderBar}
-
-      {selectedCard && canAct && (onPlay || onDiscard) && (
-        <div className="flex gap-3 animate-fade-in">
-          {onPlay && (
-            <button
-              onClick={handlePlay}
-              className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all shadow-lg hover:scale-105 active:scale-95"
-            >
-              ↑ Play to Table
-            </button>
-          )}
-          {onDiscard && (
-            <button
-              onClick={handleDiscard}
-              className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white/80 font-semibold text-sm transition-all hover:scale-105 active:scale-95"
-            >
-              Put aside
-            </button>
-          )}
-          <button
-            onClick={() => setSelectedCard(null)}
-            className="px-4 py-2 rounded-lg text-white/40 hover:text-white/70 text-sm transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-      {!selectedCard && !pickedCardId && ordered.length > 0 && (
-        <p className="text-white/30 text-xs">{pickHint ?? arrangeHint}</p>
-      )}
-      {onPick && pickedCardId && pickHint && (
-        <p className="text-gold/60 text-xs">{pickHint}</p>
+      {!selectedCard && !pickedCardId && ordered.length > 1 && (
+        <p className="text-white/60 text-xs">{arrangeHint}</p>
       )}
     </div>
   );

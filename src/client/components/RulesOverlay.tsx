@@ -11,8 +11,8 @@ export function RulesOverlay({ card, onClose }: { card: GameRulesCard; onClose?:
           {card.emoji}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-white font-semibold text-[11px] leading-tight truncate">{card.name}</div>
-          <div className="text-white/40 text-[10px] truncate">
+          <div className="text-white font-semibold text-[11px] leading-tight break-words">{card.name}</div>
+          <div className="text-white/40 text-[10px] break-words">
             {card.tagline} · {card.players}
           </div>
         </div>

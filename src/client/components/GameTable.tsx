@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AskActionPanel } from './AskActionPanel';
+import { ActionPillBar } from './ActionPillBar';
 import { BattleLane } from './BattleLane';
 import { CenterPile } from './CenterPile';
 import { CardFlightLayer } from './CardFlightLayer';
+import { FeltTurnHint } from './FeltTurnHint';
 import { RulesOverlay } from './RulesOverlay';
 import { CardHand } from './CardHand';
 import { FeltBoardExtras } from './FeltBoardExtras';
@@ -19,27 +20,36 @@ import { resolveTableKind } from '../../game/audit/playability-registry-pure';
 import { catalogEntry, GAME_CONFIGS } from '../../game/registry/catalog';
 import { resolveFeltActions } from '../lib/felt-actions-pure';
 import {
-  laneFlights,
+  DEAL_SKIP_AFTER_MS,
+  STOCK_ANCHOR,
+  inferCollectFallback,
+  inferCollectWinner,
   originAnchor,
-  type CardFlightPlan,
+  shouldAnimateDeal,
+  type CollectSignals,
 } from '../lib/card-flight-pure';
-import { centerBattleSlots, centerPileCards, hasSharedCenterPile, labeledCenterRows, laneSnapshotFromState } from '../lib/center-projection-pure';
+import {
+  animView,
+  createIdleAnimState,
+  emptyPresented,
+  eventFromEngine,
+  makeTableBoard,
+  reduceAnim,
+} from '../lib/table-anim-machine-pure';
+import { reservedBattleSlots } from '../lib/battle-lane-pure';
+import { centerPileCards, hasSharedCenterPile, labeledCenterRows, laneSnapshotFromState } from '../lib/center-projection-pure';
 import { useChrome } from '../lib/chrome';
 import { resolveActorId, resolveIsMyTurn } from '../lib/felt-turn-pure';
 import {
   ANYONE_TARGET_ID,
-  askButtonLabel,
-  askTurnHint,
-  drawButtonLabel,
-  drawTurnHint,
-  isAnyoneChoice,
   legalAskTargets,
-  ranksHeld,
   resolveAskTargetId,
   seatActionLabel,
 } from '../lib/ask-action-pure';
 import { bookCounts, bookScoreLine, lastAskLine, setCountLabel, setScoreHeading } from '../lib/last-ask-pure';
-import { mobileTurnLine, resolveMobileDock } from '../lib/mobile-dock-pure';
+import { resolveActionBar, type ActionPill } from '../lib/action-pills-pure';
+import { resolveMobileDock, resolvePhoneTableLayout } from '../lib/mobile-dock-pure';
+import { resolveTurnStrip, seatAriaLabel } from '../lib/table-turn-pure';
 import { PREFS_CHANGED_EVENT } from '../lib/prefs-events';
 import { suitLaddersFromPlayed } from '../lib/suit-ladder-pure';
 import { resolveTableChrome } from '../lib/table-chrome-pure';
@@ -47,6 +57,16 @@ import { resolveSurface } from '../lib/table-theme';
 import { shouldAutoWarCollect, WAR_REVEAL_HOLD_MS } from '../lib/war-reveal-pure';
 
 const DUMMY_CARD = { id: 'back', suit: 'spades' as const, rank: 'A' as const };
+
+function StockGhost() {
+  return (
+    <div
+      data-card-anchor={STOCK_ANCHOR}
+      className="pointer-events-none absolute left-1/2 top-1/2 w-12 h-[68px] -translate-x-1/2 -translate-y-1/2 opacity-0"
+      aria-hidden
+    />
+  );
+}
 
 function FaceDownStock({
   count,
@@ -63,7 +83,7 @@ function FaceDownStock({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 py-3">
-      <div className="text-gold/70 text-xs tracking-widest uppercase font-semibold">Your pile</div>
+      <div className="text-white text-sm font-semibold">Your pile</div>
       <StockPile
         playerId={playerId}
         count={count}
@@ -71,8 +91,8 @@ function FaceDownStock({
         disabled={disabled}
         small={mobile}
       />
-      <p className="text-white/35 text-xs h-4">
-        {count === 0 ? 'No cards left' : disabled ? 'Wait…' : 'Click the pile to flip'}
+      <p className="text-white/75 text-sm h-5">
+        {count === 0 ? 'No cards left' : disabled ? 'Wait…' : 'Tap the pile to flip'}
       </p>
     </div>
   );
@@ -87,6 +107,8 @@ interface GameTableProps {
   busyHint?: string;
   showInvite?: boolean;
   canAct?: (action: { intent: string; [k: string]: unknown }) => boolean;
+  /** Put game name + Rules in the app header. Off for the playground picker. */
+  appNav?: boolean;
 }
 
 export function GameTable({
@@ -98,6 +120,7 @@ export function GameTable({
   busyHint,
   showInvite = true,
   canAct,
+  appNav = true,
 }: GameTableProps) {
   const config = GAME_CONFIGS[game.gameType] ?? GAME_CONFIGS.freeplay;
   const rules = rulesCardFor(config, GLOSSARY[game.gameType]);
@@ -110,7 +133,7 @@ export function GameTable({
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
   const [askRank, setAskRank] = useState<string | null>(null);
   const [askWho, setAskWho] = useState<string>(ANYONE_TARGET_ID);
-  const { setActiveGameType } = useChrome();
+  const { setActiveGameType, setNavTools, setNavEnd } = useChrome();
   const theme = useMemo(
     () => resolveSurface(game.gameType, config.tableTheme),
     [game.gameType, config.tableTheme, themeTick],
@@ -154,9 +177,55 @@ export function GameTable({
     }
   }
 
+  useEffect(() => {
+    if (!appNav) return;
+    setNavTools(
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <span className="font-display font-bold text-[color:var(--text)] text-sm uppercase tracking-wide break-words">
+          {config.name}
+        </span>
+        {showInvite && (
+          <span className="text-gold font-mono font-bold tracking-widest text-xs shrink-0">{game.code}</span>
+        )}
+        {showInvite && (
+          <button
+            type="button"
+            onClick={copyInviteLink}
+            className="text-[color:var(--text)]/80 hover:text-[color:var(--text)] text-xs font-semibold min-h-11 px-2 shrink-0"
+          >
+            {copied ? 'Copied' : 'Invite'}
+          </button>
+        )}
+      </div>,
+    );
+    return () => setNavTools(null);
+  }, [appNav, config.name, copied, game.code, setNavTools, showInvite]);
+
+  useEffect(() => {
+    if (!appNav) return;
+    setNavEnd(
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          onClick={() => setRulesOpen((v) => !v)}
+          aria-expanded={rulesOpen}
+          className={`min-h-11 px-2 text-sm font-semibold ${
+            rulesOpen ? 'text-gold' : 'text-[color:var(--text)]/80 hover:text-gold'
+          }`}
+        >
+          Rules
+        </button>
+        {rulesOpen && <RulesOverlay card={rules} onClose={() => setRulesOpen(false)} />}
+      </div>,
+    );
+    return () => setNavEnd(null);
+  }, [appNav, rules, rulesOpen, setNavEnd]);
+
+  const skipDealRef = useRef<() => void>(() => {});
   function trySend(action: { intent: string; [k: string]: unknown }) {
     const tableauIntent = action.intent === 'move' || action.intent === 'draw-stock' || action.intent === 'deal-row';
     if (!tableauIntent && canAct && !canAct(action)) return;
+    skipDealRef.current();
     send(action);
   }
   function handlePlay(card: Card) {
@@ -188,6 +257,11 @@ export function GameTable({
     roundCards?: Record<string, Card[]>;
     currentTrick?: { playerId: string; card: Card }[];
     roundWinnerId?: string | null;
+    lastWinnerSeat?: number | null;
+    collectorId?: string | null;
+    tricksWon?: Record<string, number>;
+    captured?: Record<string, Card[]>;
+    tricksPlayed?: number;
     center?: Card[];
     current?: string;
     currentPlayerId?: string;
@@ -238,10 +312,8 @@ export function GameTable({
     : players.find((p) => p.seat === game.currentSeat);
   const rankFromCard = player.hand.find((c) => c.id === pickedCardId)?.rank ?? null;
   const pickedRank = rankFromCard ?? askRank;
-  const heldRanks = ranksHeld(player.hand);
   const askOpponents = legalAskTargets(opponents);
   const resolvedAskTargetId = resolveAskTargetId(askWho, opponents);
-  const resolvedAskTarget = askOpponents.find((o) => o.id === resolvedAskTargetId) ?? null;
   const books = bookCounts(gs.books);
   const askLine = lastAskLine(gs.lastAsk);
   const scoreLine = bookScoreLine(books, players);
@@ -299,11 +371,6 @@ export function GameTable({
       setAskRank(pickedCardId === card.id ? null : card.rank);
     }
   }
-  function handleAskRank(rank: string) {
-    setAskRank((cur) => (cur === rank ? null : rank));
-    const card = player.hand.find((c) => c.rank === rank);
-    setPickedCardId((id) => (askRank === rank ? null : card?.id ?? id));
-  }
   function submitAsk(who = askWho) {
     if (!chrome.askRankIntent || !pickedRank) return;
     const targetId = resolveAskTargetId(who, opponents);
@@ -319,7 +386,9 @@ export function GameTable({
       chrome.drawPicked ||
       chrome.cribDiscard ||
       chrome.showCorners ||
-      chrome.showFishing,
+      chrome.showFishing ||
+      allowPlay ||
+      allowDiscard,
   );
 
   function handleTarget(targetId: string) {
@@ -343,19 +412,7 @@ export function GameTable({
     return false;
   }
   const seatTarget = Boolean(chrome.drawFromIntent || chrome.askRankIntent);
-  const askSubmitLabel = chrome.askRankIntent
-    ? askButtonLabel(pickedRank, resolvedAskTarget?.name ?? null, isAnyoneChoice(askWho))
-    : drawButtonLabel(resolvedAskTarget?.name ?? askOpponents[0]?.name ?? null);
-  const askSubmitReady = chrome.askRankIntent
-    ? Boolean(
-        pickedRank &&
-          resolvedAskTargetId &&
-          (!canAct || canAct({ intent: chrome.askRankIntent, rank: pickedRank, targetId: resolvedAskTargetId })),
-      )
-    : Boolean(
-        resolvedAskTargetId &&
-          (!canAct || canAct({ intent: chrome.drawFromIntent!, targetId: resolvedAskTargetId })),
-      );
+  const phoneLayout = resolvePhoneTableLayout();
   const dock = resolveMobileDock({
     askRankIntent: chrome.askRankIntent,
     drawFromIntent: chrome.drawFromIntent,
@@ -373,13 +430,7 @@ export function GameTable({
       chrome.showPeg ||
       typeof gs.pot === 'number',
   );
-  const showTalkPanel = Boolean(
-    showFeltStatus ||
-      chrome.turnButtons.length > 0 ||
-      chrome.askRankIntent ||
-      chrome.drawFromIntent,
-  );
-  const askPanelOpen = Boolean((chrome.askRankIntent || chrome.drawFromIntent) && isMyTurn && !busy);
+  const showTalkPanel = showFeltStatus;
 
   useEffect(() => {
     setPickedCardId(null);
@@ -395,22 +446,19 @@ export function GameTable({
     game.deckCount > 0 &&
     (!hasDrawLimit || drawsLeft > 0) &&
     (!canAct || canAct({ intent: 'draw' }));
-  const snap = laneSnapshotFromState(gs);
-  const battleSlots = centerBattleSlots(players, gs);
-  const centerCards = centerPileCards(gs);
+  const canDrawDiscard =
+    felt.allowDrawDiscard &&
+    isMyTurn &&
+    game.discardPile.length > 0 &&
+    (!canAct || canAct({ intent: 'draw', source: 'discard' }));
+  function handleDrawDiscard() {
+    trySend({ intent: 'draw', source: 'discard' });
+  }
+  const engineLanes = laneSnapshotFromState(gs);
+  const engineCenter = centerPileCards(gs);
   const showCenterPile = hasSharedCenterPile(gs) && !chrome.showCorners && !chrome.showFishing;
-  const showBattle = !showCenterPile && (chrome.reserveBattleLane || battleSlots.some((s) => s.cards.length > 0));
-  const canSlap = Boolean(chrome.slapIntent) && !busy && centerCards.length > 0;
   const flipNeedsTurn = chrome.stockIntent !== 'war-play';
   const stockDisabled = busy || player.handCount === 0 || (flipNeedsTurn && !isMyTurn);
-  const [heldWinner, setHeldWinner] = useState<string | null>(null);
-  const cardsOnLane = battleSlots.some((s) => s.cards.length > 0);
-  useEffect(() => {
-    if (gs.roundWinnerId) setHeldWinner(gs.roundWinnerId);
-    if (cardsOnLane || busy) return;
-    const t = setTimeout(() => setHeldWinner(null), 560);
-    return () => clearTimeout(t);
-  }, [gs.roundWinnerId, cardsOnLane, busy]);
 
   // Multiplayer War: winner settles after a hold so both cards can sit, shake, then fly home.
   // Solo matches already settle via the bot loop (`canAct` is set).
@@ -432,184 +480,266 @@ export function GameTable({
     return () => clearTimeout(t);
   }, [gs.phase, gs.roundWinnerId, player.id, busy, canAct, send]);
 
-  const snapStamp = battleSlots.map((s) => `${s.playerId}:${s.cards.map((c) => c.id).join(',')}`).join('|');
-  const prevSnap = useRef(snap);
-  const prevType = useRef(game.gameType);
-  const [flights, setFlights] = useState<CardFlightPlan[]>([]);
-  useEffect(() => {
-    if (prevType.current !== game.gameType) {
-      prevType.current = game.gameType;
-      prevSnap.current = snap;
-      setFlights([]);
-      return;
-    }
-    const planned = laneFlights(prevSnap.current, snap, gs.roundWinnerId ?? heldWinner);
-    prevSnap.current = snap;
-    if (planned.length) {
-      setFlights((cur) => {
-        const have = new Set(cur.map((f) => f.key));
-        const add = planned.filter((f) => !have.has(f.key));
-        return add.length ? [...cur, ...add] : cur;
-      });
-    }
-  }, [snapStamp, game.gameType, gs.roundWinnerId, heldWinner]);
-  const onFlightDone = useCallback((key: string) => {
-    setFlights((cur) => cur.filter((f) => f.key !== key));
+  const collectSignals = useMemo<CollectSignals>(
+    () => ({
+      roundWinnerId: gs.roundWinnerId ?? null,
+      lastWinnerSeat: gs.lastWinnerSeat ?? null,
+      collectorId: gs.collectorId ?? null,
+      currentSeat: game.currentSeat,
+      handCounts: Object.fromEntries(players.map((p) => [p.id, p.handCount])),
+      tricksWon: gs.tricksWon,
+      capturedCounts: gs.captured
+        ? Object.fromEntries(Object.entries(gs.captured).map(([id, cards]) => [id, cards.length]))
+        : undefined,
+      tricksPlayed: gs.tricksPlayed,
+      deckCount: game.deckCount,
+    }),
+    [
+      gs.roundWinnerId,
+      gs.lastWinnerSeat,
+      gs.collectorId,
+      gs.tricksWon,
+      gs.captured,
+      gs.tricksPlayed,
+      game.currentSeat,
+      game.deckCount,
+      players,
+    ],
+  );
+  const engineBoard = useMemo(
+    () =>
+      makeTableBoard({
+        lanes: engineLanes,
+        center: engineCenter,
+        handCounts: Object.fromEntries(players.map((p) => [p.id, p.handCount])),
+        viewerHand: player.hand,
+        viewerId: player.id,
+      }),
+    [engineLanes, engineCenter, players, player.hand, player.id],
+  );
+  const dealKey = `${game.id}:${game.gameType}:${players.map((p) => p.id).join(',')}`;
+  const prevSignals = useRef(collectSignals);
+  const collectWinner =
+    inferCollectWinner(players, prevSignals.current, collectSignals) ?? gs.roundWinnerId ?? null;
+  const collectFallback = inferCollectFallback(prevSignals.current, collectSignals);
+  const reducedMotion =
+    typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const shouldDeal = shouldAnimateDeal({
+    showTableau: chrome.showTableau,
+    showMemory: chrome.showMemory,
+    seatCounts: players.map((p) => p.handCount),
+    reducedMotion: false,
+  });
+  const [anim, setAnim] = useState(() => createIdleAnimState(emptyPresented(engineBoard)));
+  const engineEvent = eventFromEngine(anim, engineBoard, {
+    dealKey,
+    shouldDeal,
+    reducedMotion,
+    winnerId: collectWinner,
+    fallback: collectFallback,
+  });
+  const presentedAnim = engineEvent ? reduceAnim(anim, engineEvent) : anim;
+  if (engineEvent) setAnim(presentedAnim);
+  prevSignals.current = collectSignals;
+  const view = animView(presentedAnim);
+  const boardRef = useRef(engineBoard);
+  boardRef.current = engineBoard;
+  const skipAnim = useCallback(() => {
+    setAnim((s) => reduceAnim(s, { type: 'skip', board: boardRef.current }));
   }, []);
-  const hiddenCardIds = new Set(flights.map((f) => f.card.id));
-  const revealWinnerId = gs.phase === 'reveal' ? (gs.roundWinnerId ?? null) : null;
+  skipDealRef.current = skipAnim;
+  const onFlightStart = useCallback((key: string) => {
+    setAnim((s) => reduceAnim(s, { type: 'flightStarted', key }));
+  }, []);
+  const onFlightDone = useCallback((key: string) => {
+    setAnim((s) => reduceAnim(s, { type: 'flightLanded', key }));
+  }, []);
+  useEffect(() => {
+    if (presentedAnim.phase !== 'dealing') return;
+    const t = setTimeout(() => {
+      setAnim((s) => reduceAnim(s, { type: 'skip', board: boardRef.current }));
+    }, DEAL_SKIP_AFTER_MS);
+    return () => clearTimeout(t);
+  }, [presentedAnim.phase]);
+
+  const hiddenCardIds = view.hiddenCardIds;
+  const battleSlots = reservedBattleSlots(players, view.lanes);
+  const displayCenter = view.center;
+  const showBattle =
+    !showCenterPile &&
+    (chrome.reserveBattleLane ||
+      Object.values(view.lanes).some((cards) => cards.length > 0) ||
+      view.phase === 'holding' ||
+      view.phase === 'collecting' ||
+      view.phase === 'playing');
+  const shownHand = view.viewerHand;
+  const shownCount = (id: string, _actual?: number) => view.handCounts[id] ?? 0;
+  const dealing = view.phase === 'dealing';
+  const canSlap =
+    Boolean(chrome.slapIntent) &&
+    !busy &&
+    view.center.length > 0 &&
+    view.phase !== 'collecting' &&
+    view.phase !== 'dealing';
+  const showFeltStock = chrome.showSharedPiles || (dealing && !chrome.showTableau && !chrome.showMemory);
+  const revealWinnerId =
+    view.phase === 'holding' || view.phase === 'collecting'
+      ? presentedAnim.winnerId
+      : gs.phase === 'reveal'
+        ? (gs.roundWinnerId ?? null)
+        : null;
   const winnerName = revealWinnerId
     ? (players.find((p) => p.id === revealWinnerId)?.name ?? 'Winner')
     : null;
 
   const stock = chrome.handReveal === 'stock';
-  function askControls(phone = false) {
-    if (!askPanelOpen) return null;
-    return (
-      <AskActionPanel
-        title={chrome.askRankIntent ? 'Ask' : 'Draw'}
-        hint={
-          phone
-            ? undefined
-            : chrome.askRankIntent
-              ? 'Choose a number or face you already have, then who — Anyone or a named player.'
-              : 'Choose a player and take a card they are holding.'
-        }
-        ranks={chrome.askRankIntent ? heldRanks : undefined}
-        selectedRank={pickedRank}
-        onSelectRank={chrome.askRankIntent ? handleAskRank : undefined}
-        targets={askOpponents.map((o) => ({ id: o.id, name: o.name }))}
-        selectedTargetId={
-          chrome.drawFromIntent && isAnyoneChoice(askWho)
-            ? (askOpponents[0]?.id ?? askWho)
-            : askWho
-        }
-        onSelectTarget={(id) => {
-          setAskWho(id);
-          if (chrome.askRankIntent && pickedRank) submitAsk(id);
-          else if (chrome.drawFromIntent) {
-            const targetId = resolveAskTargetId(id, opponents);
-            if (targetId) handleDrawFrom(targetId);
-          }
-        }}
-        includeAnyone={Boolean(chrome.askRankIntent)}
-        anyoneName={phone ? undefined : askOpponents[0]?.name}
-        disabled={busy || !isMyTurn}
-        submitLabel={askSubmitLabel}
-        submitDisabled={!askSubmitReady}
-        onSubmit={() => {
-          if (chrome.askRankIntent) submitAsk();
-          else if (resolvedAskTargetId) handleDrawFrom(resolvedAskTargetId);
-        }}
-        phone={phone}
-      />
-    );
+  const selectedCard = player.hand.find((c) => c.id === pickedCardId) ?? null;
+  const actionBar = resolveActionBar({
+    isMyTurn,
+    busy,
+    selectedCardId: pickedCardId,
+    selectedRank: pickedRank,
+    askRank: Boolean(chrome.askRankIntent),
+    drawFrom: Boolean(chrome.drawFromIntent),
+    allowPlay,
+    allowDiscard,
+    canPlaySelected: Boolean(
+      selectedCard && allowPlay && (!canAct || canAct({ intent: 'play', cardId: selectedCard.id })),
+    ),
+    canDiscardSelected: Boolean(
+      selectedCard &&
+        allowDiscard &&
+        (!canAct || canAct({ intent: 'discard', cardId: selectedCard.id })),
+    ),
+    canDraw,
+    canDrawDiscard,
+    canSlap,
+    slapLabel: chrome.slapIntent === 'snap' ? 'Snap' : 'Slap',
+    turnButtons: chrome.turnButtons.map((b) => {
+      const action: { intent: string; [k: string]: unknown } = { intent: b.intent };
+      if (b.side) action.side = b.side;
+      return {
+        id: `${b.intent}-${b.side ?? ''}`,
+        label: b.label,
+        legal: !busy && (!canAct || canAct(action)),
+      };
+    }),
+    targets: askOpponents.map((o) => ({ id: o.id, name: o.name })),
+    includeAnyone: Boolean(chrome.askRankIntent),
+    selectedTargetId: askWho,
+    anyoneId: ANYONE_TARGET_ID,
+  });
+  function handlePill(pill: ActionPill) {
+    if (pill.id === 'submit-ask') {
+      if (chrome.askRankIntent) submitAsk();
+      else if (resolvedAskTargetId) handleDrawFrom(resolvedAskTargetId);
+      return;
+    }
+    if (pill.id === 'play' && selectedCard) {
+      handlePlay(selectedCard);
+      setPickedCardId(null);
+      setAskRank(null);
+      return;
+    }
+    if (pill.id === 'discard' && selectedCard) {
+      handleDiscard(selectedCard);
+      setPickedCardId(null);
+      setAskRank(null);
+      return;
+    }
+    if (pill.id === 'draw') {
+      handleDraw();
+      return;
+    }
+    if (pill.id === 'draw-discard') {
+      handleDrawDiscard();
+      return;
+    }
+    if (pill.id === 'slap') {
+      handleSlap();
+      return;
+    }
+    const turn = chrome.turnButtons.find((b) => `${b.intent}-${b.side ?? ''}` === pill.id);
+    if (turn) {
+      handleTurnButton(turn);
+      return;
+    }
+    if (chrome.askRankIntent) {
+      setAskWho(pill.id);
+      if (pickedRank) submitAsk(pill.id);
+      return;
+    }
+    if (chrome.drawFromIntent) {
+      const targetId = resolveAskTargetId(pill.id, opponents);
+      if (targetId) handleDrawFrom(targetId);
+    }
   }
-  function turnButtonRow(phone = false) {
-    if (chrome.turnButtons.length === 0 || !isMyTurn || busy) return null;
-    return (
-      <div className="flex flex-wrap justify-center gap-2">
-        {chrome.turnButtons.map((b) => (
-          <button
-            key={`${b.intent}-${b.side ?? ''}-${b.label}`}
-            type="button"
-            onClick={() => handleTurnButton(b)}
-            className={
-              phone
-                ? 'min-h-12 px-5 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-base font-bold'
-                : 'px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold'
-            }
-          >
-            {b.label}
-          </button>
-        ))}
-      </div>
-    );
-  }
+
+  const legalButtonLabels = chrome.turnButtons
+    .filter((b) => {
+      const action: { intent: string; [k: string]: unknown } = { intent: b.intent };
+      if (b.side) action.side = b.side;
+      return !busy && isMyTurn && (!canAct || canAct(action));
+    })
+    .map((b) => b.label);
+  const strip = resolveTurnStrip({
+    dealing,
+    busy,
+    busyHint,
+    isMyTurn,
+    actorName: currentTurnPlayer?.name,
+    wonLine: revealWinnerId
+      ? revealWinnerId === player.id
+        ? 'You won — cards coming home…'
+        : `${winnerName} won — collecting…`
+      : null,
+    askRank: Boolean(chrome.askRankIntent),
+    pickedRank,
+    drawFrom: Boolean(chrome.drawFromIntent),
+    canDraw,
+    canDrawDiscard,
+    canPlay: allowPlay && isMyTurn && !busy,
+    canDiscard: allowDiscard && isMyTurn && !busy && (!canAct || player.hand.some((c) => canAct({ intent: 'discard', cardId: c.id }))),
+    legalButtonLabels,
+    turnButtonLabels: chrome.turnButtons.map((b) => b.label),
+  });
+  const oppTurnId = !isMyTurn ? (currentTurnPlayer?.id ?? null) : null;
+
+  const feltHint = (
+    <FeltTurnHint
+      line={
+        isMyTurn && hasDrawLimit && !dealing && !busy
+          ? `${strip.line} · ${drawsLeft > 0 ? `${drawsLeft} take${drawsLeft !== 1 ? 's' : ''} left` : 'no takes left'}`
+          : strip.line
+      }
+      tone={strip.tone}
+      skipDeal={dealing ? skipAnim : undefined}
+    />
+  );
+  const pillBar = () => <ActionPillBar bar={actionBar} onPill={handlePill} />;
 
   return (
-    <div className="flex flex-col w-full h-full min-h-0 select-none" style={{ background: theme.pageBg }}>
-      <div className="relative z-30 flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-white/5 shrink-0 h-11">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <span className="text-white font-bold text-sm truncate">{config.name}</span>
-          {showInvite && (
-            <span className="text-gold font-mono font-bold tracking-widest text-xs">{game.code}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <a href="/" className="text-white/40 hover:text-gold/80 text-xs transition-colors">
-            ⟳ Change game
-          </a>
-          {showInvite && (
-            <button onClick={copyInviteLink} className="text-white/30 hover:text-gold/70 text-xs transition-colors">
-              {copied ? '✓ Copied!' : '⧉ Invite'}
-            </button>
-          )}
-          <span className="text-white/30 text-xs hidden sm:inline">{players.length}P</span>
-          <div className={`w-2 h-2 rounded-full ${game.deckCount > 0 ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`} />
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setRulesOpen((v) => !v)}
-              aria-expanded={rulesOpen}
-              className={`text-xs font-semibold ${rulesOpen ? 'text-gold' : 'text-white/50 hover:text-gold/80'}`}
-            >
-              Rules
-            </button>
-            {rulesOpen && <RulesOverlay card={rules} onClose={() => setRulesOpen(false)} />}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center gap-2 px-4 border-b border-white/5 text-xs shrink-0 h-8">
-        <span className={busy ? 'text-gold/80 font-semibold' : isMyTurn ? 'text-emerald-400 font-semibold' : 'text-white/40'}>
-          {busy
-            ? (busyHint ?? 'Opponent is playing…')
-            : revealWinnerId
-              ? revealWinnerId === player.id
-                ? '● You won — cards coming home…'
-                : `● ${winnerName} won — collecting…`
-              : (
-                <>
-                  <span className="sm:hidden">
-                    {mobileTurnLine({
-                      busy: false,
-                      isMyTurn,
-                      waitingName: currentTurnPlayer?.name,
-                    })}
-                  </span>
-                  <span className="hidden sm:inline">
-                    {isMyTurn
-                      ? chrome.drawFromIntent
-                        ? drawTurnHint()
-                        : chrome.askRankIntent
-                          ? askTurnHint(pickedRank)
-                          : chrome.turnButtons.length > 0
-                            ? `● Your turn · ${chrome.turnButtons.map((b) => b.label).join(' or ')}`
-                            : '● Your turn'
-                      : `Waiting for ${currentTurnPlayer?.name ?? '…'}…`}
-                  </span>
-                </>
-              )}
-        </span>
-        {isMyTurn && hasDrawLimit && (
-          <span className="text-white/30">
-            · {drawsLeft > 0 ? `${drawsLeft} draw${drawsLeft !== 1 ? 's' : ''} left` : 'no draws left'} · put one aside to end the turn
-          </span>
-        )}
-      </div>
-
+    <div className="relative flex flex-col w-full h-full min-h-0 select-none" style={{ background: theme.pageBg }}>
       {/* ── MOBILE LAYOUT ── */}
-      <div className="flex-1 flex flex-col overflow-hidden sm:hidden min-h-0 w-full">
+      <div className={`${phoneLayout.surfaceClass} sm:hidden`} style={{ background: theme.mobileFelt }}>
         {opponents.length > 0 && (
-        <div className="flex items-center justify-center gap-4 px-4 py-3 border-b border-white/5 shrink-0">
+        <div className={phoneLayout.opponentRowClass}>
           {opponents.slice(0, 4).map((opp) => (
             <StockPile
               key={opp.id}
               playerId={opp.id}
-              count={opp.handCount}
+              count={shownCount(opp.id, opp.handCount)}
               name={opp.name}
               small
+              compact
+              isTurn={oppTurnId === opp.id}
+              ariaLabel={seatAriaLabel({
+                name: opp.name,
+                you: false,
+                isTurn: oppTurnId === opp.id,
+                cardCount: shownCount(opp.id, opp.handCount),
+                scoreLabel: seatScore(opp.id),
+              })}
               onFlip={seatTarget && !dock.hideSeatActionHint ? () => handleTarget(opp.id) : undefined}
               disabled={!canTarget(opp)}
               actionLabel={
@@ -628,19 +758,28 @@ export function GameTable({
         </div>
         )}
 
-        <div className={`flex-1 flex items-center justify-center gap-6 px-4 py-6 min-h-0 w-full ${chrome.showTableau ? 'overflow-auto items-start' : 'overflow-hidden'}`} style={{ background: theme.mobileFelt }}>
-          {chrome.showSharedPiles && (
+        <div className={phoneLayout.centerClass}>
+          {feltHint}
+          {!showFeltStock && <StockGhost />}
+          <div className="flex items-center justify-center gap-3 w-full min-h-0">
+          {showFeltStock && (
           <div className="flex flex-col items-center gap-1 w-12 shrink-0">
-            <button onClick={handleDraw} disabled={busy || !canDraw} className="group relative">
+            <button
+              onClick={handleDraw}
+              disabled={busy || !canDraw}
+              data-card-anchor={STOCK_ANCHOR}
+              aria-label={canDraw ? 'Take a card from the face-down pile' : `Face-down pile, ${game.deckCount} left`}
+              className="group relative min-h-11"
+            >
               <div className="relative w-12 h-[68px]">
                 {game.deckCount > 1 && <div className="absolute -top-0.5 -left-0.5 w-12 h-[68px] rounded-lg bg-indigo-800/80 border border-white/10" />}
                 <div className="relative z-10 w-12 h-[68px] rounded-lg bg-linear-to-br from-indigo-700 to-slate-800 border border-white/20 flex items-center justify-center shadow-lg group-hover:shadow-emerald-900/30 transition-all">
-                  <span className="text-white/30 text-[10px] font-bold">{game.deckCount}</span>
+                  <span className="text-white/70 text-[10px] font-bold">{game.deckCount}</span>
                 </div>
               </div>
             </button>
-            <span className={`h-3 text-[9px] ${canDraw ? 'text-gold/40' : 'text-white/20'}`}>
-              {game.deckCount > 0 ? (canDraw ? 'Draw' : 'No draws') : ''}
+            <span className={`h-3 text-[10px] font-semibold ${canDraw ? 'text-amber-200' : 'text-white/55'}`}>
+              {game.deckCount > 0 ? (canDraw ? 'Take a card' : 'Face-down pile') : ''}
             </span>
           </div>
           )}
@@ -655,7 +794,13 @@ export function GameTable({
             />
           )}
           {showCenterPile && (
-            <CenterPile cards={centerCards} onSlap={handleSlap} canSlap={canSlap} small />
+            <CenterPile
+              cards={displayCenter}
+              onSlap={handleSlap}
+              canSlap={canSlap}
+              small
+              hiddenCardIds={hiddenCardIds}
+            />
           )}
           {chrome.showTableau && (
             <TableauBoard gameType={game.gameType} gameState={gs as Record<string, unknown>} viewerId={player.id} busy={busy} onAction={trySend} />
@@ -721,8 +866,8 @@ export function GameTable({
                   </div>
                 </div>
               ))}
-              {askLine && <p className="text-white/50 text-[10px] text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/50 text-[10px] text-center">{setScoreHeading()} · {scoreLine}</p>}
+              {askLine && <p className="text-white/50 text-[10px] text-center break-words">{askLine}</p>}
+              {scoreLine && <p className="text-gold/50 text-[10px] text-center break-words">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -746,7 +891,20 @@ export function GameTable({
 
           {chrome.showSharedPiles && (
           <div className="flex flex-col items-center gap-1 w-12 shrink-0">
-            <div className="w-12 h-[68px] rounded-lg border border-dashed border-white/20 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={handleDrawDiscard}
+              disabled={busy || !canDrawDiscard}
+              aria-label={
+                canDrawDiscard
+                  ? 'Take the leftover card'
+                  : game.discardPile.length > 0
+                    ? 'Leftover pile'
+                    : 'Leftover pile is empty'
+              }
+              title={!canDrawDiscard && felt.allowDrawDiscard && isMyTurn ? 'Take from the leftover pile after it is allowed' : undefined}
+              className="w-12 h-[68px] rounded-lg border border-dashed border-white/30 flex items-center justify-center disabled:cursor-not-allowed"
+            >
               {game.discardPile.length > 0 ? (
                 <div className="w-12 h-[68px] rounded-lg bg-white border border-white/40 flex flex-col justify-between p-0.5">
                   <span className={`text-[8px] font-bold ${game.discardPile[game.discardPile.length - 1].suit === 'hearts' || game.discardPile[game.discardPile.length - 1].suit === 'diamonds' ? 'text-red-600' : 'text-slate-800'}`}>
@@ -757,29 +915,35 @@ export function GameTable({
                   </span>
                 </div>
               ) : (
-                <span className="text-white/15 text-[9px] text-center">Leftover</span>
+                <span className="text-white/50 text-[9px] text-center">Leftover</span>
               )}
-            </div>
-            <span className="text-white/20 text-[9px] h-3">{game.discardPile.length}</span>
+            </button>
+            <span className={`text-[10px] font-semibold h-3 ${canDrawDiscard ? 'text-amber-200' : 'text-white/55'}`}>
+              {canDrawDiscard ? 'Take leftover' : 'Leftover'}
+            </span>
           </div>
           )}
+          </div>
         </div>
 
-        <div className="border-t border-white/5 shrink-0 max-h-[58%] overflow-y-auto pb-[env(safe-area-inset-bottom)]" style={{ background: theme.handBg }}>
+        <div className={phoneLayout.handClass}>
           {stock ? (
-            <FaceDownStock
-              playerId={player.id}
-              count={player.handCount}
-              onFlip={handleFlipStock}
-              disabled={stockDisabled}
-              mobile
-            />
-          ) : chrome.showTableau ? null : (
-            <div data-card-anchor={originAnchor(player.id)}>
+            <>
+              {pillBar()}
+              <FaceDownStock
+                playerId={player.id}
+                count={shownCount(player.id, player.handCount)}
+                onFlip={handleFlipStock}
+                disabled={stockDisabled}
+                mobile
+              />
+            </>
+          ) : chrome.showTableau ? (
+            pillBar()
+          ) : (
+            <div data-card-anchor={originAnchor(player.id)} className="min-w-[4rem] min-h-[6rem]">
               <CardHand
-                cards={player.hand}
-                onPlay={allowPlay ? handlePlay : undefined}
-                onDiscard={allowDiscard ? handleDiscard : undefined}
+                cards={shownHand}
                 onPick={canPickHand ? handlePick : undefined}
                 pickedCardId={pickedCardId}
                 pickedCardIds={chrome.drawPicked || chrome.cribDiscard ? pickedIds : undefined}
@@ -787,13 +951,8 @@ export function GameTable({
                 isMyTurn={isMyTurn && !busy}
                 mobile
                 quiet={dock.quietHandHints}
+                aboveFan={pillBar()}
               />
-            </div>
-          )}
-          {dock.underHand && (askPanelOpen || (chrome.turnButtons.length > 0 && isMyTurn && !busy)) && (
-            <div className="flex flex-col items-center gap-2 px-3 pt-1 pb-3">
-              {askControls(true)}
-              {turnButtonRow(true)}
             </div>
           )}
         </div>
@@ -818,6 +977,15 @@ export function GameTable({
               player={opp}
               position="top"
               stock={stock}
+              isTurn={oppTurnId === opp.id}
+              shownCount={shownCount(opp.id, opp.handCount)}
+              ariaLabel={seatAriaLabel({
+                name: opp.name,
+                you: false,
+                isTurn: oppTurnId === opp.id,
+                cardCount: shownCount(opp.id, opp.handCount),
+                scoreLabel: seatScore(opp.id),
+              })}
               onSelect={seatTarget ? () => handleTarget(opp.id) : undefined}
               selectLabel={seatActionLabel({
                 askRank: Boolean(chrome.askRankIntent),
@@ -833,10 +1001,18 @@ export function GameTable({
         </div>
         )}
 
-        <div className={`relative z-10 flex-1 flex items-center justify-center gap-8 py-4 min-h-0 ${chrome.showTableau ? 'overflow-auto items-start pt-8' : ''}`}>
-          {chrome.showSharedPiles && (
-          <div className="flex flex-col items-center gap-2 w-[70px] shrink-0">
-            <button onClick={handleDraw} disabled={busy || !canDraw} className="group relative">
+        <div className={`relative z-10 flex-1 flex flex-col items-center justify-center gap-3 py-4 min-h-0 ${chrome.showTableau ? 'items-start pt-8' : ''}`}>
+          {feltHint}
+          {!showFeltStock && <StockGhost />}
+          <div className="flex items-center justify-center gap-8 min-h-0 w-full">
+          {showFeltStock && (
+          <div className="flex flex-col items-center gap-2 w-[70px] shrink-0" data-card-anchor={STOCK_ANCHOR}>
+            <button
+              onClick={handleDraw}
+              disabled={busy || !canDraw}
+              aria-label={canDraw ? 'Take a card from the face-down pile' : `Face-down pile, ${game.deckCount} left`}
+              className="group relative"
+            >
               <div className="relative w-[70px] h-[100px]">
                 {[2, 1, 0].map((offset) => (
                   <div key={offset} className="absolute" style={{ top: -offset * 2, left: offset }}>
@@ -848,9 +1024,9 @@ export function GameTable({
                 </div>
               </div>
             </button>
-            <span className="text-white/50 text-xs h-4 tabular-nums">{game.deckCount} left</span>
-            <span className={`h-4 text-[10px] tracking-wide ${canDraw ? 'text-gold/60' : 'text-white/25'}`}>
-              {game.deckCount > 0 ? (canDraw ? 'Click to draw' : 'No draws left') : ''}
+            <span className="text-white/80 text-xs h-4 tabular-nums">{game.deckCount} left</span>
+            <span className={`h-4 text-xs font-semibold ${canDraw ? 'text-amber-200' : 'text-white/60'}`}>
+              {game.deckCount > 0 ? (canDraw ? 'Take a card' : 'Face-down pile') : ''}
             </span>
           </div>
           )}
@@ -864,7 +1040,12 @@ export function GameTable({
             />
           )}
           {showCenterPile && (
-            <CenterPile cards={centerCards} onSlap={handleSlap} canSlap={canSlap} />
+            <CenterPile
+              cards={displayCenter}
+              onSlap={handleSlap}
+              canSlap={canSlap}
+              hiddenCardIds={hiddenCardIds}
+            />
           )}
           {chrome.showTableau && (
             <TableauBoard gameType={game.gameType} gameState={gs as Record<string, unknown>} viewerId={player.id} busy={busy} onAction={trySend} />
@@ -874,7 +1055,6 @@ export function GameTable({
           )}
           {showTalkPanel && (
             <div className="flex flex-col items-center gap-3 max-w-lg">
-              {askControls()}
               {typeof gs.pot === 'number' && <p className="text-gold/70 text-sm">Pot {gs.pot}</p>}
               <FeltBoardExtras
                 showCorners={chrome.showCorners}
@@ -949,9 +1129,8 @@ export function GameTable({
                   </div>
                 </div>
               ))}
-              {turnButtonRow()}
-              {askLine && <p className="text-white/60 text-sm text-center">{askLine}</p>}
-              {scoreLine && <p className="text-gold/60 text-xs text-center">{setScoreHeading()} · {scoreLine}</p>}
+              {askLine && <p className="text-white/60 text-sm text-center break-words">{askLine}</p>}
+              {scoreLine && <p className="text-gold/60 text-xs text-center break-words">{setScoreHeading()} · {scoreLine}</p>}
             </div>
           )}
 
@@ -967,7 +1146,7 @@ export function GameTable({
                       disabled={busy || !isMyTurn || !felt.allowPickup}
                       label={`Pick up ${card.rank} of ${card.suit}`}
                     />
-                    <span className="text-white/30 text-[9px] max-w-[70px] truncate">{card.playedByName}</span>
+                    <span className="text-white/30 text-[9px] text-center break-words">{card.playedByName}</span>
                   </div>
                 ))}
               </div>
@@ -976,48 +1155,55 @@ export function GameTable({
 
           {chrome.showSharedPiles && (
           <div className="flex flex-col items-center gap-2 w-[70px] shrink-0">
-            <div className="w-[70px] h-[100px] rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={handleDrawDiscard}
+              disabled={busy || !canDrawDiscard}
+              aria-label={canDrawDiscard ? 'Take the leftover card' : 'Leftover pile'}
+              className="w-[70px] h-[100px] rounded-xl border-2 border-dashed border-white/30 flex items-center justify-center disabled:cursor-not-allowed"
+            >
               {game.discardPile.length > 0
                 ? <PlayingCard card={game.discardPile[game.discardPile.length - 1]} />
-                : <span className="text-white/20 text-xs text-center leading-tight">Leftover<br />pile</span>}
-            </div>
-            <span className="text-white/30 text-xs h-4">{game.discardPile.length} set aside</span>
+                : <span className="text-white/60 text-xs text-center leading-tight">Leftover<br />pile</span>}
+            </button>
+            <span className={`text-xs font-semibold h-4 ${canDrawDiscard ? 'text-amber-200' : 'text-white/70'}`}>
+              {canDrawDiscard ? 'Take leftover' : `${game.discardPile.length} set aside`}
+            </span>
           </div>
           )}
+          </div>
         </div>
 
-        <div className="relative z-10 px-4 pb-4 shrink-0 min-h-0 flex items-center justify-center">
+        <div className="relative z-10 px-4 pb-4 shrink-0 min-h-0 flex flex-col items-center justify-center">
           {stock ? (
-            <FaceDownStock
-              playerId={player.id}
-              count={player.handCount}
-              onFlip={handleFlipStock}
-              disabled={stockDisabled}
-            />
-          ) : chrome.showTableau ? null : (
-            <div data-card-anchor={originAnchor(player.id)}>
+            <>
+              {pillBar()}
+              <FaceDownStock
+                playerId={player.id}
+                count={shownCount(player.id, player.handCount)}
+                onFlip={handleFlipStock}
+                disabled={stockDisabled}
+              />
+            </>
+          ) : chrome.showTableau ? (
+            pillBar()
+          ) : (
+            <div data-card-anchor={originAnchor(player.id)} className="min-w-[4rem] min-h-[6rem]">
               <CardHand
-                cards={player.hand}
-                onPlay={allowPlay ? handlePlay : undefined}
-                onDiscard={allowDiscard ? handleDiscard : undefined}
+                cards={shownHand}
                 onPick={canPickHand ? handlePick : undefined}
                 pickedCardId={pickedCardId}
                 pickedCardIds={chrome.drawPicked || chrome.cribDiscard ? pickedIds : undefined}
-                pickHint={
-                  chrome.askRankIntent
-                    ? pickedRank
-                      ? `Asking for ${pickedRank}s — use Ask above, or click a player`
-                      : 'Or tap a card to pick its number or face'
-                    : undefined
-                }
                 playerName={player.name}
                 isMyTurn={isMyTurn && !busy}
+                quiet
+                aboveFan={pillBar()}
               />
             </div>
           )}
         </div>
       </div>
-      <CardFlightLayer flights={flights} onFlightDone={onFlightDone} />
+      <CardFlightLayer flights={view.activeFlights} onFlightStart={onFlightStart} onFlightDone={onFlightDone} />
     </div>
   );
 }

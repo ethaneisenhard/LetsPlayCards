@@ -78,6 +78,13 @@ describe('resolveTableChrome', () => {
     });
   });
 
+  it('keeps leftover piles on Gin Rummy plus Stop here', () => {
+    expect(resolveTableChrome({ gameType: 'gin_rummy', family: 'meld' })).toMatchObject({
+      turnButtons: [{ intent: 'knock', label: 'Stop here' }],
+      showSharedPiles: true,
+    });
+  });
+
   it('maps Blackjack to hit / stand', () => {
     expect(resolveTableChrome({ gameType: 'blackjack' })).toMatchObject({
       turnButtons: [
