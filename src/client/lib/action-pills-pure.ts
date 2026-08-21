@@ -1,5 +1,5 @@
 /**
- * When the under-hand action bar is open, and which pills it shows.
+ * When the above-fan action bar is open, and which pills it shows.
  * Card-tied moves wait for a pick. Turn-only moves show on your turn.
  */
 

@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   DEAL_STAGGER_MS,
   STOCK_ANCHOR,
+  dealAnchorIds,
   dealFlights,
+  dealSurfaceReady,
   flightDelta,
   laneFlights,
   originAnchor,
   laneAnchor,
+  pickFlightBox,
   shouldAnimateDeal,
 } from './card-flight-pure';
 
@@ -76,11 +79,36 @@ describe('dealFlights', () => {
     expect(flights[3].delayMs).toBe(3 * DEAL_STAGGER_MS);
   });
 
-  it('skips tableau and empty seats', () => {
+  it('skips tableau, empty seats, and reduced motion', () => {
     expect(shouldAnimateDeal({ showTableau: true, seatCounts: [7, 7] })).toBe(false);
     expect(shouldAnimateDeal({ seatCounts: [0, 0] })).toBe(false);
+    expect(shouldAnimateDeal({ reducedMotion: true, seatCounts: [7, 7] })).toBe(false);
     expect(shouldAnimateDeal({ seatCounts: [7, 7] })).toBe(true);
     expect(dealFlights([{ playerId: 'me', count: 0 }])).toEqual([]);
+  });
+
+  it('is deal-ready only when stock and every seat share one surface', () => {
+    expect(dealAnchorIds(['me', 'bill'])).toEqual([
+      STOCK_ANCHOR,
+      originAnchor('me'),
+      originAnchor('bill'),
+    ]);
+    expect(dealSurfaceReady([STOCK_ANCHOR, originAnchor('me')], ['me', 'bill'])).toBe(false);
+    expect(
+      dealSurfaceReady([STOCK_ANCHOR, originAnchor('me'), originAnchor('bill')], ['me', 'bill']),
+    ).toBe(true);
+  });
+});
+
+describe('pickFlightBox', () => {
+  it('prefers a painted box over an opacity-0 leftover', () => {
+    expect(
+      pickFlightBox([
+        { w: 48, h: 68, opacity: 0 },
+        { w: 48, h: 68, opacity: 1 },
+      ]),
+    ).toEqual({ w: 48, h: 68, opacity: 1 });
+    expect(pickFlightBox([{ w: 48, h: 68, display: 'none' }, { w: 4, h: 4 }])).toBeNull();
   });
 });
 

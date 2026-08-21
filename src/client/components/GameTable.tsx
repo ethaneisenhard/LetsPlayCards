@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActionPillBar } from './ActionPillBar';
 import { BattleLane } from './BattleLane';
 import { CenterPile } from './CenterPile';
@@ -23,6 +23,7 @@ import {
   DEAL_SKIP_AFTER_MS,
   STOCK_ANCHOR,
   dealFlights,
+  dealSurfaceReady,
   laneFlights,
   originAnchor,
   shouldAnimateDeal,
@@ -48,6 +49,16 @@ import { resolveSurface } from '../lib/table-theme';
 import { shouldAutoWarCollect, WAR_REVEAL_HOLD_MS } from '../lib/war-reveal-pure';
 
 const DUMMY_CARD = { id: 'back', suit: 'spades' as const, rank: 'A' as const };
+
+function StockGhost() {
+  return (
+    <div
+      data-card-anchor={STOCK_ANCHOR}
+      className="pointer-events-none absolute left-1/2 top-1/2 w-12 h-[68px] -translate-x-1/2 -translate-y-1/2 opacity-0"
+      aria-hidden
+    />
+  );
+}
 
 function FaceDownStock({
   count,
@@ -467,9 +478,14 @@ export function GameTable({
   const [dealPhase, setDealPhase] = useState<'pending' | 'flying' | 'done'>('pending');
   const [dealHiddenIds, setDealHiddenIds] = useState<Set<string>>(() => new Set());
   const [dealHiddenCounts, setDealHiddenCounts] = useState<Record<string, number>>({});
+  const [anchorsReady, setAnchorsReady] = useState(false);
   const dealtKey = useRef<string | null>(null);
   const dealStarted = useRef(false);
   const dealKey = `${game.id}:${game.gameType}:${players.map((p) => p.id).join(',')}`;
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(() => setAnchorsReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   useEffect(() => {
     if (prevType.current !== game.gameType) {
       prevType.current = game.gameType;
@@ -520,23 +536,39 @@ export function GameTable({
       return next;
     });
   }, []);
+  const [dealTick, setDealTick] = useState(0);
   useEffect(() => {
-    if (dealtKey.current === dealKey) return;
+    if (!anchorsReady || dealtKey.current === dealKey) return;
     const seats = players.map((p) => ({
       playerId: p.id,
       count: p.handCount,
       cards: p.id === player.id && p.hand.length > 0 ? p.hand : undefined,
     }));
+    const reducedMotion =
+      typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (
       !shouldAnimateDeal({
         showTableau: chrome.showTableau,
         showMemory: chrome.showMemory,
         seatCounts: seats.map((s) => s.count),
+        reducedMotion,
       })
     ) {
       dealtKey.current = dealKey;
       setDealPhase('done');
       return;
+    }
+    const present = Array.from(document.querySelectorAll('[data-card-anchor]')).map(
+      (el) => el.getAttribute('data-card-anchor') ?? '',
+    );
+    if (!dealSurfaceReady(present, players.map((p) => p.id))) {
+      if (dealTick > 16) {
+        dealtKey.current = dealKey;
+        setDealPhase('done');
+        return;
+      }
+      const id = requestAnimationFrame(() => setDealTick((n) => n + 1));
+      return () => cancelAnimationFrame(id);
     }
     const planned = dealFlights(seats);
     dealtKey.current = dealKey;
@@ -549,7 +581,7 @@ export function GameTable({
     );
     setDealPhase('flying');
     setFlights((cur) => [...cur, ...planned]);
-  }, [dealKey, chrome.showMemory, chrome.showTableau, player.hand, player.id, players]);
+  }, [anchorsReady, dealTick, dealKey, chrome.showMemory, chrome.showTableau, player.hand, player.id, players]);
   useEffect(() => {
     if (!dealStarted.current || dealPhase !== 'flying') return;
     if (!flights.some((f) => f.kind === 'deal')) {
@@ -574,6 +606,7 @@ export function GameTable({
     return Math.max(0, actual - (dealHiddenCounts[id] ?? 0));
   };
   const dealing = dealPhase !== 'done';
+  const showFeltStock = chrome.showSharedPiles || (dealing && !chrome.showTableau && !chrome.showMemory);
   const revealWinnerId = gs.phase === 'reveal' ? (gs.roundWinnerId ?? null) : null;
   const winnerName = revealWinnerId
     ? (players.find((p) => p.id === revealWinnerId)?.name ?? 'Winner')
@@ -703,12 +736,12 @@ export function GameTable({
       skipDeal={dealing ? finishDeal : undefined}
     />
   );
-  const pills = <ActionPillBar bar={actionBar} onPill={handlePill} />;
+  const pillBar = () => <ActionPillBar bar={actionBar} onPill={handlePill} />;
 
   return (
     <div className="relative flex flex-col w-full h-full min-h-0 select-none" style={{ background: theme.pageBg }}>
       {/* ── MOBILE LAYOUT ── */}
-      <div className="flex-1 flex flex-col overflow-hidden sm:hidden min-h-0 w-full">
+      <div className={`${phoneLayout.surfaceClass} sm:hidden`} style={{ background: theme.mobileFelt }}>
         {opponents.length > 0 && (
         <div className={phoneLayout.opponentRowClass}>
           {opponents.slice(0, 4).map((opp) => (
@@ -745,10 +778,11 @@ export function GameTable({
         </div>
         )}
 
-        <div className={`relative flex flex-col items-center justify-center gap-2 px-3 py-2 w-full ${phoneLayout.feltClass} ${chrome.showTableau ? 'overflow-auto items-start' : 'overflow-hidden'}`} style={{ background: theme.mobileFelt }}>
+        <div className={phoneLayout.centerClass}>
           {feltHint}
+          {!showFeltStock && <StockGhost />}
           <div className="flex items-center justify-center gap-3 w-full min-h-0">
-          {(chrome.showSharedPiles || dealing) && (
+          {showFeltStock && (
           <div className="flex flex-col items-center gap-1 w-12 shrink-0">
             <button
               onClick={handleDraw}
@@ -906,17 +940,22 @@ export function GameTable({
           </div>
         </div>
 
-        <div className={`border-t border-white/5 ${phoneLayout.dockClass}`} style={{ background: theme.handBg }}>
+        <div className={phoneLayout.handClass}>
           {stock ? (
-            <FaceDownStock
-              playerId={player.id}
-              count={shownCount(player.id, player.handCount)}
-              onFlip={handleFlipStock}
-              disabled={stockDisabled}
-              mobile
-            />
-          ) : chrome.showTableau ? null : (
-            <div data-card-anchor={originAnchor(player.id)}>
+            <>
+              {pillBar()}
+              <FaceDownStock
+                playerId={player.id}
+                count={shownCount(player.id, player.handCount)}
+                onFlip={handleFlipStock}
+                disabled={stockDisabled}
+                mobile
+              />
+            </>
+          ) : chrome.showTableau ? (
+            pillBar()
+          ) : (
+            <div data-card-anchor={originAnchor(player.id)} className="min-w-[4rem] min-h-[6rem]">
               <CardHand
                 cards={shownHand}
                 onPick={canPickHand ? handlePick : undefined}
@@ -926,10 +965,10 @@ export function GameTable({
                 isMyTurn={isMyTurn && !busy}
                 mobile
                 quiet={dock.quietHandHints}
+                aboveFan={pillBar()}
               />
             </div>
           )}
-          <div className={phoneLayout.askDockClass}>{pills}</div>
         </div>
       </div>
 
@@ -976,10 +1015,11 @@ export function GameTable({
         </div>
         )}
 
-        <div className={`relative z-10 flex-1 flex flex-col items-center justify-center gap-3 py-4 min-h-0 ${chrome.showTableau ? 'overflow-auto items-start pt-8' : ''}`}>
+        <div className={`relative z-10 flex-1 flex flex-col items-center justify-center gap-3 py-4 min-h-0 ${chrome.showTableau ? 'items-start pt-8' : ''}`}>
           {feltHint}
+          {!showFeltStock && <StockGhost />}
           <div className="flex items-center justify-center gap-8 min-h-0 w-full">
-          {(chrome.showSharedPiles || dealing) && (
+          {showFeltStock && (
           <div className="flex flex-col items-center gap-2 w-[70px] shrink-0" data-card-anchor={STOCK_ANCHOR}>
             <button
               onClick={handleDraw}
@@ -1145,14 +1185,19 @@ export function GameTable({
 
         <div className="relative z-10 px-4 pb-4 shrink-0 min-h-0 flex flex-col items-center justify-center">
           {stock ? (
-            <FaceDownStock
-              playerId={player.id}
-              count={shownCount(player.id, player.handCount)}
-              onFlip={handleFlipStock}
-              disabled={stockDisabled}
-            />
-          ) : chrome.showTableau ? null : (
-            <div data-card-anchor={originAnchor(player.id)}>
+            <>
+              {pillBar()}
+              <FaceDownStock
+                playerId={player.id}
+                count={shownCount(player.id, player.handCount)}
+                onFlip={handleFlipStock}
+                disabled={stockDisabled}
+              />
+            </>
+          ) : chrome.showTableau ? (
+            pillBar()
+          ) : (
+            <div data-card-anchor={originAnchor(player.id)} className="min-w-[4rem] min-h-[6rem]">
               <CardHand
                 cards={shownHand}
                 onPick={canPickHand ? handlePick : undefined}
@@ -1161,17 +1206,12 @@ export function GameTable({
                 playerName={player.name}
                 isMyTurn={isMyTurn && !busy}
                 quiet
+                aboveFan={pillBar()}
               />
             </div>
           )}
-          {pills}
         </div>
       </div>
-      <div
-        data-card-anchor={STOCK_ANCHOR}
-        className="pointer-events-none absolute left-1/2 top-[36%] w-12 h-[68px] -translate-x-1/2 opacity-0"
-        aria-hidden
-      />
       <CardFlightLayer flights={flights} onFlightDone={onFlightDone} />
     </div>
   );

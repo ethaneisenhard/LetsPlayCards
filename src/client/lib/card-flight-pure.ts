@@ -43,9 +43,39 @@ export function shouldAnimateDeal(input: {
   showTableau?: boolean;
   showMemory?: boolean;
   seatCounts: number[];
+  reducedMotion?: boolean;
 }): boolean {
-  if (input.showTableau || input.showMemory) return false;
+  if (input.reducedMotion || input.showTableau || input.showMemory) return false;
   return input.seatCounts.some((n) => n > 0);
+}
+
+/** Stock plus every seat — all must sit on the same felt before flights start. */
+export function dealAnchorIds(playerIds: string[]): string[] {
+  return [STOCK_ANCHOR, ...playerIds.map(originAnchor)];
+}
+
+export function dealSurfaceReady(present: Iterable<string>, playerIds: string[]): boolean {
+  const have = new Set(present);
+  return dealAnchorIds(playerIds).every((id) => have.has(id));
+}
+
+export const ANCHOR_MIN_PX = 8;
+
+export type FlightBoxCandidate = {
+  w: number;
+  h: number;
+  display?: string;
+  visibility?: string;
+  opacity?: number;
+};
+
+/** Prefer a painted, on-felt box. Skip display:none / tiny / off-canvas leftovers. */
+export function pickFlightBox<T extends FlightBoxCandidate>(boxes: T[]): T | null {
+  const measurable = boxes.filter(
+    (b) => b.w >= ANCHOR_MIN_PX && b.h >= ANCHOR_MIN_PX && b.display !== 'none',
+  );
+  const solid = measurable.find((b) => b.visibility !== 'hidden' && (b.opacity ?? 1) > 0);
+  return solid ?? measurable[0] ?? null;
 }
 
 /** Round-robin flights from the leftover / face-down pile to each seat. */

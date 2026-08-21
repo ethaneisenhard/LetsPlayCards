@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { PlayingCard } from './PlayingCard';
 import type { Card } from '../../game/types';
 import {
@@ -20,9 +20,11 @@ interface CardHandProps {
   playerName: string;
   isMyTurn?: boolean;
   mobile?: boolean;
-  /** Hide arrange / pick hints when actions sit under the fan. */
+  /** Hide arrange / pick hints when pills sit above the fan. */
   quiet?: boolean;
   hideOrder?: boolean;
+  /** Ask / Play / Hit pills — immediately above the cards. */
+  aboveFan?: ReactNode;
 }
 
 function OrderBar({
@@ -59,6 +61,7 @@ export function CardHand({
   isMyTurn = true,
   mobile = false,
   quiet = false,
+  aboveFan,
 }: CardHandProps) {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [ordered, setOrdered] = useState<Card[]>(() => [...cards]);
@@ -194,6 +197,7 @@ export function CardHand({
           {orderBar}
         </div>
 
+        {aboveFan}
         {fan}
         {!quiet && !selectedCard && !pickedCardId && ordered.length > 1 && (
           <p className="text-white/60 text-xs text-center pb-3">{arrangeHint}</p>
@@ -210,6 +214,7 @@ export function CardHand({
         {ordered.length > 0 ? `: ${handReadout(ordered)}` : ''}
       </p>
 
+      {aboveFan}
       {fan}
       {orderBar}
       {!selectedCard && !pickedCardId && ordered.length > 1 && (

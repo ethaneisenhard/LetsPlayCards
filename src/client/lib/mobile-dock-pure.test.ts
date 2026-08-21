@@ -1,42 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import {
-  PHONE_DOCK_MAX_PCT,
-  PHONE_FELT_MIN_PCT,
-  feltSurvivesDock,
-  mobileTurnLine,
-  resolveMobileDock,
-  resolvePhoneTableLayout,
-} from './mobile-dock-pure';
+import { mobileTurnLine, resolveMobileDock, resolvePhoneTableLayout } from './mobile-dock-pure';
 
 describe('resolveMobileDock', () => {
-  it('puts Ask, Draw, and turn buttons under the hand', () => {
+  it('keeps Ask, Draw, and turn pills with the hand', () => {
     expect(resolveMobileDock({ askRankIntent: 'gofish-ask' })).toEqual({
       ask: true,
       draw: false,
       turnButtons: false,
-      underHand: true,
+      nearHand: true,
       quietHandHints: true,
       hideSeatActionHint: true,
     });
     expect(resolveMobileDock({ drawFromIntent: 'draw-from' })).toMatchObject({
       draw: true,
-      underHand: true,
+      nearHand: true,
       hideSeatActionHint: true,
     });
     expect(resolveMobileDock({ turnButtonCount: 2 })).toMatchObject({
       turnButtons: true,
-      underHand: true,
+      nearHand: true,
       quietHandHints: true,
       hideSeatActionHint: false,
     });
   });
 
-  it('leaves a play-only table without a dock', () => {
+  it('leaves a play-only table without extra chrome', () => {
     expect(resolveMobileDock({})).toEqual({
       ask: false,
       draw: false,
       turnButtons: false,
-      underHand: false,
+      nearHand: false,
       quietHandHints: false,
       hideSeatActionHint: false,
     });
@@ -44,37 +37,17 @@ describe('resolveMobileDock', () => {
 });
 
 describe('resolvePhoneTableLayout', () => {
-  it('caps the dock so the felt keeps a usable share', () => {
+  it('is one felt column with pills above the fan and no inner scroll', () => {
     const layout = resolvePhoneTableLayout();
-    expect(layout.feltMinPct).toBe(PHONE_FELT_MIN_PCT);
-    expect(layout.dockMaxPct).toBe(PHONE_DOCK_MAX_PCT);
-    expect(layout.feltMinPct).toBe(40);
-    expect(layout.dockMaxPct).toBe(32);
-    expect(layout.feltClass).toContain('flex-1');
-    expect(layout.feltClass).toContain('min-h-[40%]');
-    expect(layout.dockClass).toContain('max-h-[32%]');
-    expect(layout.dockClass).toContain('safe-area-inset-bottom');
-  });
-
-  it('leaves felt on a 390-wide Go Fish column when the hand is just the fan', () => {
-    const columnPx = 700;
-    const compactOpponent = 72;
-    const typicalHand = 180;
-    expect(
-      feltSurvivesDock({
-        columnPx,
-        opponentPx: compactOpponent,
-        uncappedDockPx: typicalHand,
-      }),
-    ).toBe(true);
-    expect(
-      feltSurvivesDock({
-        columnPx,
-        opponentPx: 110,
-        uncappedDockPx: 410,
-        dockMaxPct: 58,
-      }),
-    ).toBe(false);
+    expect(layout.pillSlot).toBe('above-fan');
+    expect(layout.surfaceClass).toContain('overflow-hidden');
+    expect(layout.surfaceClass).not.toContain('overflow-y-auto');
+    expect(layout.centerClass).toContain('flex-1');
+    expect(layout.centerClass).not.toContain('overflow-y-auto');
+    expect(layout.handClass).toContain('shrink-0');
+    expect(layout.handClass).not.toContain('overflow-y-auto');
+    expect(layout.handClass).not.toContain('max-h-');
+    expect(layout.opponentRowClass).not.toContain('border-b');
   });
 });
 
