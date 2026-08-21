@@ -1,6 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 1480" role="img" aria-labelledby="title desc">
   <title id="title">Five sets of card marks, drawn as simple pictures</title>
-  <desc id="desc">Drawings of the four marks on the cards — later called suits — from China, Egypt, Italy and Spain, Germany, and France. These are original drawings, not photos of old packs.</desc>
+  <desc id="desc">Drawings of the four marks on the cards - later called suits - from China, Egypt, Italy and Spain, Germany, and France. These are original drawings, not photos of old packs.</desc>
   <defs>
     <style>
       .bg { fill: #111827; }
@@ -17,9 +18,9 @@
   <rect class="bg" width="390" height="1480"/>
 
   <rect class="panel" x="8" y="8" width="374" height="280" rx="16"/>
-  <text class="k" x="24" y="36">800s–1400s · China</text>
+  <text class="k" x="24" y="36">800s-1400s / China</text>
   <text class="t" x="24" y="64">Money marks</text>
-  <text class="s" x="24" y="88">Coins and strings of coins — a card</text>
+  <text class="s" x="24" y="88">Coins and strings of coins - a card</text>
   <text class="s" x="24" y="108">could stand in for cash on the table.</text>
   <g transform="translate(22,128)">
     <rect class="card" width="80" height="140" rx="8"/>
@@ -47,9 +48,9 @@
   </g>
 
   <rect class="panel" x="8" y="300" width="374" height="280" rx="16"/>
-  <text class="k" x="24" y="328">1200s–1500s · Egypt</text>
+  <text class="k" x="24" y="328">1200s-1500s / Egypt</text>
   <text class="t" x="24" y="356">Mamluk marks</text>
-  <text class="s" x="24" y="380">Cups, coins, swords, polo sticks —</text>
+  <text class="s" x="24" y="380">Cups, coins, swords, polo sticks -</text>
   <text class="s" x="24" y="400">the four families on a 52-card pack.</text>
   <g transform="translate(22,420)">
     <rect class="card" width="80" height="140" rx="8"/>
@@ -77,7 +78,7 @@
   </g>
 
   <rect class="panel" x="8" y="592" width="374" height="280" rx="16"/>
-  <text class="k" x="24" y="620">Late 1300s · Italy and Spain</text>
+  <text class="k" x="24" y="620">Late 1300s / Italy and Spain</text>
   <text class="t" x="24" y="648">Cups, coins, swords, clubs</text>
   <text class="s" x="24" y="672">Polo was unfamiliar, so the stick</text>
   <text class="s" x="24" y="692">family became a club or baton.</text>
@@ -110,7 +111,7 @@
   </g>
 
   <rect class="panel" x="8" y="884" width="374" height="280" rx="16"/>
-  <text class="k" x="24" y="912">1400s · German lands</text>
+  <text class="k" x="24" y="912">1400s / German lands</text>
   <text class="t" x="24" y="940">Hearts, bells, acorns, leaves</text>
   <text class="s" x="24" y="964">Makers tried new pictures. These</text>
   <text class="s" x="24" y="984">four became the German set.</text>
@@ -141,9 +142,9 @@
   </g>
 
   <rect class="panel" x="8" y="1176" width="374" height="296" rx="16"/>
-  <text class="k" x="24" y="1204">Around 1480 · France</text>
+  <text class="k" x="24" y="1204">Around 1480 / France</text>
   <text class="t" x="24" y="1232">Hearts, diamonds, clubs, spades</text>
-  <text class="s" x="24" y="1256">Cheap two-color stencil marks — the</text>
+  <text class="s" x="24" y="1256">Cheap two-color stencil marks - the</text>
   <text class="s" x="24" y="1276">four families in a kitchen-drawer pack.</text>
   <g transform="translate(22,1296)">
     <rect class="card" width="80" height="156" rx="8"/>

@@ -193,7 +193,7 @@ export interface HistoryFigure {
 }
 
 /** Bump when visuals move so cached preview HTML/images refresh. */
-export const HISTORY_ASSET_VERSION = 'top2';
+export const HISTORY_ASSET_VERSION = 'top3';
 
 export const HISTORY_HERO = {
   src: '/history/img/italian-15c.webp',
@@ -218,7 +218,7 @@ export const HISTORY_MARKS = {
   intro:
     'A suit is a family of cards that share one symbol. The four marks on the cards changed as packs traveled. This chart is an original drawing — a simple picture of each set, not a photograph of a real deck.',
   figure: {
-    src: '/history/img/suit-marks.svg',
+    src: '/history/img/suit-marks.webp',
     alt: 'Five rows of simple drawings: Chinese money marks, Mamluk cups coins swords and polo sticks, Italian and Spanish cups coins swords and clubs, German hearts bells acorns and leaves, and French hearts diamonds clubs and spades.',
     caption:
       'Top to bottom: money marks from China; cups, coins, swords, and polo sticks from Mamluk Egypt; the same idea in Italy and Spain; hearts, bells, acorns, and leaves in German lands; then the French hearts, diamonds, clubs, and spades most packs use now.',
@@ -229,8 +229,8 @@ export const HISTORY_MARKS = {
       license: 'Original illustration (not a photo of a historic pack)',
     },
     kind: 'drawing' as const,
-    width: 390,
-    height: 1480,
+    width: 780,
+    height: 2980,
   } satisfies HistoryFigure,
 };
 

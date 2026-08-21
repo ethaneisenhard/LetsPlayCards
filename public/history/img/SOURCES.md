@@ -5,7 +5,8 @@ to WebP for the phone-sized page. The suit-mark chart is an original drawing.
 
 | File | What it is | Source | License |
 | --- | --- | --- | --- |
-| `suit-marks.svg` | Original drawing of five mark systems (China, Mamluk Egypt, Italy/Spain, German lands, France). Not a photo of a historic pack. | Let's Play Cards | Original |
+| `suit-marks.webp` | Raster of the five-row marks chart (China, Mamluk Egypt, Italy/Spain, German lands, France). Displayed asset — phones would not draw the SVG. | Let's Play Cards | Original |
+| `suit-marks.svg` | Vector source for the same chart. Not used in the page `<img>`. | Let's Play Cards | Original |
 | `ming-1400.webp` | Woodcut card, Turpan, c. 1400 | [Wikimedia: Ming Dynasty playing card, c. 1400](https://commons.wikimedia.org/wiki/File:Ming_Dynasty_playing_card,_c._1400.jpg) (Museum für Völkerkunde, Berlin, via Needham) | Public domain |
 | `mamluk-cards.webp` | Four Mamluk cards (coins, polo sticks, cups, swords), c. 1500 | [Wikimedia: Mamluk kanjifah cards](https://commons.wikimedia.org/wiki/File:Mamluk_kanjifah_cards.png) — assembly by Countakeshi from Commons scans of Topkapı cards | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | `italian-15c.webp` | Uncut Italian sheet, 15th century | [NGA 1951.16.5](https://purl.org/nga/collection/artobject/41319) / [Commons file](https://commons.wikimedia.org/wiki/File:Italian_15th_Century,_Playing_Cards,_15th_century,_NGA_41319.jpg) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
