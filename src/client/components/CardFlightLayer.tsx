@@ -32,9 +32,11 @@ function readBox(anchor: string): Box | null {
 
 function FlyingCard({
   plan,
+  onStart,
   onDone,
 }: {
   plan: CardFlightPlan;
+  onStart?: (key: string) => void;
   onDone: (key: string) => void;
 }) {
   const [boxes, setBoxes] = useState<{ from: Box; to: Box } | null>(null);
@@ -51,6 +53,7 @@ function FlyingCard({
       const from = readBox(plan.fromAnchor);
       const to = readBox(plan.toAnchor);
       if (from && to) {
+        onStart?.(plan.key);
         setBoxes({ from, to });
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
@@ -73,7 +76,7 @@ function FlyingCard({
       if (doneTimer) clearTimeout(doneTimer);
       if (startTimer) clearTimeout(startTimer);
     };
-  }, [plan.key, plan.fromAnchor, plan.toAnchor, plan.delayMs, plan.kind, onDone]);
+  }, [plan.key, plan.fromAnchor, plan.toAnchor, plan.delayMs, plan.kind, onStart, onDone]);
 
   if (!boxes) return null;
   const { from, to } = boxes;
@@ -109,16 +112,18 @@ function FlyingCard({
 
 export function CardFlightLayer({
   flights,
+  onFlightStart,
   onFlightDone,
 }: {
   flights: CardFlightPlan[];
+  onFlightStart?: (key: string) => void;
   onFlightDone: (key: string) => void;
 }) {
   if (typeof document === 'undefined' || flights.length === 0) return null;
   return createPortal(
     <>
       {flights.map((plan) => (
-        <FlyingCard key={plan.key} plan={plan} onDone={onFlightDone} />
+        <FlyingCard key={plan.key} plan={plan} onStart={onFlightStart} onDone={onFlightDone} />
       ))}
     </>,
     document.body,

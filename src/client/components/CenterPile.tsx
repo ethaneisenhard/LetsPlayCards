@@ -7,13 +7,16 @@ export function CenterPile({
   onSlap,
   canSlap,
   small,
+  hiddenCardIds,
 }: {
   cards: Card[];
   onSlap?: () => void;
   canSlap?: boolean;
   small?: boolean;
+  hiddenCardIds?: ReadonlySet<string>;
 }) {
-  const top = cards[cards.length - 1];
+  const shown = hiddenCardIds ? cards.filter((c) => !hiddenCardIds.has(c.id)) : cards;
+  const top = shown[shown.length - 1];
   const box = small ? 'w-10 h-14' : 'w-[70px] h-[100px]';
 
   return (
@@ -32,7 +35,7 @@ export function CenterPile({
         )}
       </button>
       <span className="h-4 text-white/40 text-[9px] sm:text-xs tabular-nums">
-        {cards.length === 0 ? 'Center' : `${cards.length} in pile`}
+        {shown.length === 0 ? 'Center' : `${shown.length} in pile`}
       </span>
       <span className="h-4 text-[10px] tracking-wide text-gold/70">
         {canSlap ? 'Slap!' : '\u00a0'}
