@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 980" role="img" aria-labelledby="title desc">
+  <title id="title">Five sets of card marks, drawn as simple pictures</title>
+  <desc id="desc">Drawings of the four marks on the cards  later called suits  from China, Egypt, Italy and Spain, Germany, and France. These are original drawings, not photos of old packs.</desc>
+  <defs>
+    <style>
+      .bg { fill: #111827; }
+      .panel { fill: #1a2233; stroke: rgba(255,255,255,.08); stroke-width: 1; }
+      .card { fill: #f4efe4; stroke: #c9b896; stroke-width: 1.2; }
+      .k { fill: #c9a84c; font: 700 13px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+      .t { fill: #e6e9ef; font: 700 18px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+      .s { fill: #8b93a1; font: 400 12px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+      .lab { fill: #4b5563; font: 600 11px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; text-anchor: middle; }
+      .red { fill: #b42318; }
+      .black { fill: #1f2937; }
+      .ink { fill: #3f2a14; }
+      .gold { fill: #c9a227; }
+      .leaf { fill: #3f6b3a; }
+      .acorn { fill: #6b4226; }
+      .bell { fill: #d4a017; }
+    </style>
+  </defs>
+  <rect class="bg" width="800" height="980"/>
+
+  <!-- China -->
+  <rect class="panel" x="16" y="16" width="768" height="180" rx="14"/>
+  <text class="k" x="36" y="42">800s1400s · China</text>
+  <text class="t" x="36" y="66">Money marks</text>
+  <text class="s" x="36" y="86">Coins, strings of coins, and larger sums  a card could stand in for cash.</text>
+  <g transform="translate(48,104)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <circle cx="35" cy="32" r="16" fill="none" stroke="#8a6a2f" stroke-width="3"/>
+    <rect x="29" y="26" width="12" height="12" fill="#8a6a2f"/>
+    <text class="lab" x="35" y="66">coin</text>
+  </g>
+  <g transform="translate(138,104)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <rect x="32" y="10" width="6" height="44" rx="2" fill="#6b4226"/>
+    <circle cx="35" cy="20" r="7" fill="none" stroke="#8a6a2f" stroke-width="2"/>
+    <circle cx="35" cy="32" r="7" fill="none" stroke="#8a6a2f" stroke-width="2"/>
+    <circle cx="35" cy="44" r="7" fill="none" stroke="#8a6a2f" stroke-width="2"/>
+    <text class="lab" x="35" y="66">string</text>
+  </g>
+  <g transform="translate(228,104)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <text x="35" y="40" text-anchor="middle" fill="#3f2a14" font-size="28" font-weight="700" font-family="serif"></text>
+    <text class="lab" x="35" y="66">myriad</text>
+  </g>
+  <g transform="translate(318,104)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <text x="35" y="40" text-anchor="middle" fill="#3f2a14" font-size="22" font-weight="700" font-family="serif">A</text>
+    <text class="lab" x="35" y="66">tens of myriads</text>
+  </g>
+
+  <!-- Mamluk -->
+  <rect class="panel" x="16" y="212" width="768" height="180" rx="14"/>
+  <text class="k" x="36" y="238">1200s1500s · Egypt</text>
+  <text class="t" x="36" y="262">Mamluk marks</text>
+  <text class="s" x="36" y="282">Cups, coins, swords, and polo sticks  the four families on the surviving 52-card pack.</text>
+  <g transform="translate(48,300)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path d="M24 18 h22 a6 6 0 0 1 6 6 v8 c0 10-8 16-17 16s-17-6-17-16 v-8 a6 6 0 0 1 6-6z" fill="#7a3e6d"/>
+    <rect x="32" y="48" width="6" height="8" fill="#7a3e6d"/>
+    <text class="lab" x="35" y="66">cup</text>
+  </g>
+  <g transform="translate(138,300)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <circle cx="35" cy="32" r="16" fill="#c9a227"/>
+    <circle cx="35" cy="32" r="8" fill="#f4efe4"/>
+    <text class="lab" x="35" y="66">coin</text>
+  </g>
+  <g transform="translate(228,300)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path d="M22 48 L48 16" stroke="#4b5563" stroke-width="4" stroke-linecap="round"/>
+    <path d="M44 14 l8 4 -3 8z" fill="#4b5563"/>
+    <text class="lab" x="35" y="66">sword</text>
+  </g>
+  <g transform="translate(318,300)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path d="M20 46 L50 18" stroke="#6b4226" stroke-width="3.5" stroke-linecap="round"/>
+    <ellipse cx="24" cy="48" rx="8" ry="4" fill="#8a6a2f"/>
+    <text class="lab" x="35" y="66">polo stick</text>
+  </g>
+
+  <!-- Latin -->
+  <rect class="panel" x="16" y="408" width="768" height="180" rx="14"/>
+  <text class="k" x="36" y="434">Late 1300s · Italy and Spain</text>
+  <text class="t" x="36" y="458">Cups, coins, swords, clubs</text>
+  <text class="s" x="36" y="478">Polo was unfamiliar, so the stick family became a club or baton. These four marks are still used there.</text>
+  <g transform="translate(48,496)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path d="M26 16 h18 c8 0 12 6 12 12 0 10-8 16-21 20-13-4-21-10-21-20 0-6 4-12 12-12z" fill="#c45c26"/>
+    <rect x="32" y="46" width="6" height="10" fill="#8a6a2f"/>
+    <text class="lab" x="35" y="66">cup</text>
+  </g>
+  <g transform="translate(138,496)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <circle cx="35" cy="32" r="16" fill="#d4a017"/>
+    <text x="35" y="37" text-anchor="middle" fill="#6b4226" font-size="14" font-weight="700" font-family="serif">+</text>
+    <text class="lab" x="35" y="66">coin</text>
+  </g>
+  <g transform="translate(228,496)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path d="M28 50 L46 14" stroke="#2f4a6e" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M42 12 l10 6 -4 7z" fill="#2f4a6e"/>
+    <path d="M26 44 q6 8 16 4" fill="none" stroke="#2f4a6e" stroke-width="2"/>
+    <text class="lab" x="35" y="66">sword</text>
+  </g>
+  <g transform="translate(318,496)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path d="M35 14 v36" stroke="#6b4226" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="35" cy="20" r="6" fill="#3f6b3a"/>
+    <circle cx="27" cy="30" r="5" fill="#3f6b3a"/>
+    <circle cx="43" cy="30" r="5" fill="#3f6b3a"/>
+    <text class="lab" x="35" y="66">club</text>
+  </g>
+
+  <!-- German -->
+  <rect class="panel" x="16" y="604" width="768" height="180" rx="14"/>
+  <text class="k" x="36" y="630">1400s · German lands</text>
+  <text class="t" x="36" y="654">Hearts, bells, acorns, leaves</text>
+  <text class="s" x="36" y="674">Makers tried new pictures. These four became the German set still used for some games.</text>
+  <g transform="translate(48,692)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path class="red" d="M35 50 C20 36 18 24 28 18 c5-3 8 1 7 6 0-5 2-9 7-6 10 6 8 18-7 32z"/>
+    <text class="lab" x="35" y="66">heart</text>
+  </g>
+  <g transform="translate(138,692)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <ellipse cx="35" cy="26" rx="12" ry="10" class="bell"/>
+    <rect x="32" y="34" width="6" height="10" fill="#8a6a2f"/>
+    <circle cx="35" cy="48" r="3" fill="#8a6a2f"/>
+    <text class="lab" x="35" y="66">bell</text>
+  </g>
+  <g transform="translate(228,692)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <ellipse cx="35" cy="36" rx="10" ry="12" class="acorn"/>
+    <path d="M24 28 h22 c-2 8-8 10-11 10s-9-2-11-10z" fill="#3f2a14"/>
+    <rect x="32" y="14" width="6" height="12" fill="#3f6b3a"/>
+    <text class="lab" x="35" y="66">acorn</text>
+  </g>
+  <g transform="translate(318,692)">
+    <rect class="card" width="70" height="74" rx="6"/>
+    <path class="leaf" d="M35 14 c18 14 18 30 0 42 C17 44 17 28 35 14z"/>
+    <path d="M35 20 v30" stroke="#1f3320" stroke-width="1.5"/>
+    <text class="lab" x="35" y="66">leaf</text>
+  </g>
+
+  <!-- French -->
+  <rect class="panel" x="16" y="800" width="768" height="164" rx="14"/>
+  <text class="k" x="36" y="826">Around 1480 · France</text>
+  <text class="t" x="36" y="850">Hearts, diamonds, clubs, spades</text>
+  <text class="s" x="36" y="870">Cheap two-color stencil marks. These are the four families in a kitchen-drawer pack today.</text>
+  <g transform="translate(48,888)">
+    <rect class="card" width="70" height="58" rx="6"/>
+    <path class="red" d="M35 44 C22 32 20 22 28 17 c4-3 7 1 7 5 0-4 3-8 7-5 8 5 6 15-7 27z"/>
+  </g>
+  <g transform="translate(138,888)">
+    <rect class="card" width="70" height="58" rx="6"/>
+    <path class="red" d="M35 14 l14 16 -14 16 -14-16z"/>
+  </g>
+  <g transform="translate(228,888)">
+    <rect class="card" width="70" height="58" rx="6"/>
+    <circle cx="35" cy="22" r="7" class="black"/>
+    <circle cx="26" cy="32" r="7" class="black"/>
+    <circle cx="44" cy="32" r="7" class="black"/>
+    <rect x="32" y="32" width="6" height="14" class="black"/>
+  </g>
+  <g transform="translate(318,888)">
+    <rect class="card" width="70" height="58" rx="6"/>
+    <path class="black" d="M35 14 c12 10 16 18 0 28 C19 32 23 24 35 14z"/>
+    <rect x="32" y="38" width="6" height="10" class="black"/>
+  </g>
+</svg>

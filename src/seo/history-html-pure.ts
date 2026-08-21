@@ -1,4 +1,10 @@
-import { HISTORY_CANONICAL_PATH, HISTORY_PAGE } from '../content/history';
+import {
+  HISTORY_CANONICAL_PATH,
+  HISTORY_CENTURIES,
+  HISTORY_MARKS,
+  HISTORY_PAGE,
+  type HistoryFigure,
+} from '../content/history';
 import { SSG_CSS, esc, jsonLdScript } from './ssg-html-pure';
 import { SITE_ORIGIN } from './static-routes-pure';
 
@@ -33,16 +39,44 @@ function faqJsonLd(): string {
   });
 }
 
+function renderFigure(fig: HistoryFigure, extraClass = ''): string {
+  const cls = ['hist-fig', fig.wide ? 'wide' : '', extraClass].filter(Boolean).join(' ');
+  const kind =
+    fig.kind === 'drawing' ? '<span class="fig-kind">Original drawing — not a photo of a real pack</span>' : '';
+  return `<figure class="${cls}">
+<img src="${esc(fig.src)}" alt="${esc(fig.alt)}" width="${fig.width}" height="${fig.height}" loading="lazy" decoding="async">
+<figcaption>
+${kind}
+<strong>${esc(fig.period)}</strong>
+<span class="cap">${esc(fig.caption)}</span>
+<span class="credit">Credit: <a href="${esc(fig.credit.href)}" rel="noopener noreferrer">${esc(fig.credit.text)}</a> · ${esc(fig.credit.license)}</span>
+</figcaption>
+</figure>`;
+}
+
 export function renderHistoryPage(baseUrl = SITE_ORIGIN): string {
   const url = historyCanonicalUrl(baseUrl);
-  const toc = HISTORY_PAGE.sections
-    .map((s) => `<li><a href="#${esc(s.id)}">${esc(s.heading)}</a></li>`)
-    .join('\n');
+  const tocItems = [
+    ...HISTORY_PAGE.sections.slice(0, 3),
+    { id: HISTORY_MARKS.id, heading: HISTORY_MARKS.heading },
+    { id: HISTORY_CENTURIES.id, heading: HISTORY_CENTURIES.heading },
+    ...HISTORY_PAGE.sections.slice(3),
+  ];
+  const toc = tocItems.map((s) => `<li><a href="#${esc(s.id)}">${esc(s.heading)}</a></li>`).join('\n');
 
   const sections = HISTORY_PAGE.sections
     .map((s) => {
       const paras = s.paragraphs.map((p) => `<p>${esc(p)}</p>`).join('\n');
-      return `<section id="${esc(s.id)}"><h2>${esc(s.heading)}</h2>\n${paras}</section>`;
+      let extra = '';
+      if (s.id === 'fifty-two') {
+        extra = `<section id="${HISTORY_MARKS.id}"><h2>${esc(HISTORY_MARKS.heading)}</h2>
+<p>${esc(HISTORY_MARKS.intro)}</p>
+${renderFigure(HISTORY_MARKS.figure)}</section>
+<section id="${HISTORY_CENTURIES.id}"><h2>${esc(HISTORY_CENTURIES.heading)}</h2>
+<p>${esc(HISTORY_CENTURIES.intro)}</p>
+<div class="century-strip">${HISTORY_CENTURIES.figures.map((f) => renderFigure(f)).join('\n')}</div></section>`;
+      }
+      return `<section id="${esc(s.id)}"><h2>${esc(s.heading)}</h2>\n${paras}</section>\n${extra}`;
     })
     .join('\n');
 

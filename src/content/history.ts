@@ -172,3 +172,165 @@ export const GAME_ORIGINS: Record<string, string> = {
   cribbage:
     'Cribbage is an English game from the 1600s, usually credited to the poet Sir John Suckling. You score combinations and peg your way around a board to 121.',
 };
+
+export interface HistoryCredit {
+  text: string;
+  href: string;
+  license: string;
+}
+
+export interface HistoryFigure {
+  src: string;
+  alt: string;
+  caption: string;
+  period: string;
+  credit: HistoryCredit;
+  kind: 'photo' | 'drawing';
+  width: number;
+  height: number;
+  /** Wider tile in the centuries strip (sheets / multi-card photos). */
+  wide?: boolean;
+}
+
+export const HISTORY_MARKS = {
+  id: 'marks',
+  heading: 'What the marks looked like',
+  intro:
+    'A suit is a family of cards that share one symbol. The four marks on the cards changed as packs traveled. This chart is an original drawing — a simple picture of each set, not a photograph of a real deck.',
+  figure: {
+    src: '/history/img/suit-marks.svg',
+    alt: 'Five rows of simple drawings: Chinese money marks, Mamluk cups coins swords and polo sticks, Italian and Spanish cups coins swords and clubs, German hearts bells acorns and leaves, and French hearts diamonds clubs and spades.',
+    caption:
+      'Top to bottom: money marks from China; cups, coins, swords, and polo sticks from Mamluk Egypt; the same idea in Italy and Spain; hearts, bells, acorns, and leaves in German lands; then the French hearts, diamonds, clubs, and spades most packs use now.',
+    period: 'Original drawing · five places, many centuries',
+    credit: {
+      text: "Let's Play Cards",
+      href: '/history/',
+      license: 'Original illustration (not a photo of a historic pack)',
+    },
+    kind: 'drawing' as const,
+    width: 800,
+    height: 980,
+  } satisfies HistoryFigure,
+};
+
+export const HISTORY_CENTURIES = {
+  id: 'centuries',
+  heading: 'Over the centuries',
+  intro:
+    'Real cards, from museum collections. These are photographs or scans of old paper — not modern store brands. Each caption says the century and the place.',
+  figures: [
+    {
+      src: '/history/img/ming-1400.webp',
+      alt: 'A tall, narrow printed paper card from China around 1400, with a small figure and Chinese writing.',
+      caption:
+        'A woodcut card found near Turpan. Early Chinese cards were often tied to money — coins and larger sums printed on paper you could hold.',
+      period: 'c. 1400 · China (Ming)',
+      credit: {
+        text: 'Wikimedia Commons / Museum für Völkerkunde, Berlin (via Needham)',
+        href: 'https://commons.wikimedia.org/wiki/File:Ming_Dynasty_playing_card,_c._1400.jpg',
+        license: 'Public domain',
+      },
+      kind: 'photo',
+      width: 280,
+      height: 760,
+    },
+    {
+      src: '/history/img/mamluk-cards.webp',
+      alt: 'Four long painted cards from Egypt showing coins, crossed polo sticks, cups, and swords, with no people on them.',
+      caption:
+        'Four families — coins, polo sticks, cups, and swords — on a 52-card Mamluk pack. The pictures are patterns and writing, not faces.',
+      period: 'c. 1500 · Egypt (Mamluk)',
+      credit: {
+        text: 'Countakeshi, assembled from Wikimedia Commons scans of Topkapı cards',
+        href: 'https://commons.wikimedia.org/wiki/File:Mamluk_kanjifah_cards.png',
+        license: 'CC BY-SA 4.0 (resized, converted to WebP)',
+      },
+      kind: 'photo',
+      width: 530,
+      height: 350,
+      wide: true,
+    },
+    {
+      src: '/history/img/italian-15c.webp',
+      alt: 'A printed sheet of early Italian playing cards with cups, coins, swords, and clubs.',
+      caption:
+        'An uncut sheet from Italy in the 1400s. You can still see cups, coins, swords, and clubs — the four marks that arrived from the eastern Mediterranean.',
+      period: '1400s · Italy',
+      credit: {
+        text: 'National Gallery of Art, Washington (Rosenwald Collection, 1951.16.5)',
+        href: 'https://commons.wikimedia.org/wiki/File:Italian_15th_Century,_Playing_Cards,_15th_century,_NGA_41319.jpg',
+        license: 'CC0 1.0',
+      },
+      kind: 'photo',
+      width: 1200,
+      height: 812,
+      wide: true,
+    },
+    {
+      src: '/history/img/stuttgart-1430.webp',
+      alt: 'Three gold-backed painted cards from about 1430 showing a woman with a dog, nine stags, and a man holding a bird.',
+      caption:
+        'The Stuttgart pack, painted for a wealthy table. German makers tried hunting pictures — dogs, stags, birds — before later packs settled on hearts, bells, acorns, and leaves.',
+      period: 'c. 1430 · Upper Rhine (German lands)',
+      credit: {
+        text: 'Photo by 1rhb, Landesmuseum Württemberg (Stuttgarter Kartenspiel)',
+        href: 'https://commons.wikimedia.org/wiki/File:Stuttgarter-Kartenspiel_cropped.jpg',
+        license: 'CC BY-SA 4.0 (resized, converted to WebP)',
+      },
+      kind: 'photo',
+      width: 1200,
+      height: 514,
+      wide: true,
+    },
+    {
+      src: '/history/img/cloisters-queen.webp',
+      alt: 'A painted queen holding a hunting noose, from the oldest complete 52-card pack that still exists.',
+      caption:
+        'A picture card — a queen — from the Flemish Hunting Deck, made in the southern Netherlands. It is the oldest complete 52-card pack that still exists. The four families here are hunting tools, not hearts and spades.',
+      period: 'c. 1475 · southern Netherlands',
+      credit: {
+        text: 'The Metropolitan Museum of Art, The Cloisters Collection, 1983 (1983.515.41)',
+        href: 'https://www.metmuseum.org/art/collection/search/475566',
+        license: 'CC0 1.0',
+      },
+      kind: 'photo',
+      width: 800,
+      height: 1326,
+    },
+    {
+      src: '/history/img/french-king-1813.webp',
+      alt: 'A full-length French king of clubs labeled Alexandre, holding a scepter, from 1813.',
+      caption:
+        'A French picture card: the king of clubs, labeled Alexandre (Alexander). French packs named the face cards after storybook rulers. No corner letter yet — you had to see the whole picture.',
+      period: '1813 · Paris',
+      credit: {
+        text: 'Nicolas-Marie Gatteaux, Bibliothèque nationale de France (via Wikimedia Commons)',
+        href: 'https://commons.wikimedia.org/wiki/File:French_Portrait_card_deck_-_1813_-_King_of_Clubs.jpg',
+        license: 'Public domain',
+      },
+      kind: 'photo',
+      width: 720,
+      height: 1100,
+    },
+    {
+      src: '/history/img/french-8-spades-1816.webp',
+      alt: 'A French eight of spades from 1816, with eight black pike marks on a cream card.',
+      caption:
+        'The same French pack, a number card: eight spades (pikes). Cheap two-color marks like this are why the French set spread into the everyday deck.',
+      period: '1816 · Paris',
+      credit: {
+        text: 'Nicolas-Marie Gatteaux, Bibliothèque nationale de France (via Wikimedia Commons)',
+        href: 'https://commons.wikimedia.org/wiki/File:French_Portrait_card_deck_-_1816_-_8_of_Spades.jpg',
+        license: 'Public domain',
+      },
+      kind: 'photo',
+      width: 720,
+      height: 1086,
+    },
+  ] satisfies HistoryFigure[],
+};
+
+export function historyImageSrcs(): string[] {
+  return [HISTORY_MARKS.figure.src, ...HISTORY_CENTURIES.figures.map((f) => f.src)];
+}

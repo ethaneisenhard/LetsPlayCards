@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GAME_CATALOG } from '../game/registry/catalog';
 import { GLOSSARY } from './glossary';
-import { GAME_ORIGINS, HISTORY_PAGE } from './history';
+import { GAME_ORIGINS, HISTORY_CENTURIES, HISTORY_MARKS, HISTORY_PAGE, historyImageSrcs } from './history';
 import { renderHistoryPage } from '../seo/history-html-pure';
 
 const CATALOG_SLUGS = new Set<string>(GAME_CATALOG.map((e) => e.type));
@@ -60,5 +60,24 @@ describe('renderHistoryPage', () => {
     expect(html).toContain('href="/games/war/"');
     expect(html).toContain('href="/games/go_fish/"');
     expect(html).toContain('width=device-width');
+  });
+
+  it('embeds a local symbols collection and an over-the-centuries strip', () => {
+    expect(html).toContain('id="marks"');
+    expect(html).toContain('id="centuries"');
+    expect(html).toContain(HISTORY_MARKS.heading);
+    expect(html).toContain(HISTORY_CENTURIES.heading);
+    expect(html).toContain('Original drawing — not a photo of a real pack');
+    expect(html).toMatch(/loading="lazy"/);
+    for (const src of historyImageSrcs()) {
+      expect(html).toContain(`src="${src}"`);
+      expect(src.startsWith('/history/img/')).toBe(true);
+    }
+    expect(HISTORY_CENTURIES.figures.length).toBeGreaterThanOrEqual(6);
+    for (const fig of HISTORY_CENTURIES.figures) {
+      expect(fig.alt.length).toBeGreaterThan(20);
+      expect(fig.credit.license.length).toBeGreaterThan(3);
+      expect(html).toContain(fig.credit.license);
+    }
   });
 });

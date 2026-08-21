@@ -48,6 +48,23 @@ footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.0
 .origin{padding:18px 20px;border-radius:14px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2)}
 .origin h2{border:0;padding:0}
 .note{font-size:.9rem;color:#8b93a1}
+.hist-fig{margin:18px 0 0;padding:0}
+.hist-fig img{display:block;width:100%;height:auto;border-radius:12px;background:#111827;border:1px solid rgba(255,255,255,.08)}
+.hist-fig figcaption{margin-top:10px;font-size:.92rem;color:#c3cad5}
+.hist-fig figcaption strong{display:block;color:#fff;font-size:.95rem;margin-bottom:4px}
+.fig-kind{display:inline-block;font-size:11px;color:#c9a84c;border:1px solid rgba(201,168,76,.35);padding:1px 8px;border-radius:999px;margin:0 0 8px}
+.hist-fig .cap{display:block}
+.hist-fig .credit{display:block;margin-top:8px;font-size:12px;color:#8b93a1}
+.century-strip{display:flex;gap:14px;overflow-x:auto;padding:4px 0 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.century-strip .hist-fig{flex:0 0 min(78vw,280px);scroll-snap-align:start;margin:0}
+.century-strip .hist-fig.wide{flex-basis:min(92vw,420px)}
+.century-strip .hist-fig img{height:220px;object-fit:contain}
+@media (min-width:720px){
+  .century-strip{display:grid;grid-template-columns:1fr 1fr;overflow:visible;scroll-snap-type:none}
+  .century-strip .hist-fig,.century-strip .hist-fig.wide{flex:none}
+  .century-strip .hist-fig.wide{grid-column:1/-1}
+  .century-strip .hist-fig img{height:auto;max-height:420px;object-fit:contain}
+}
 @media (max-width:640px){
   .wrap{padding:28px 18px 72px}
   h1{font-size:1.85rem}
