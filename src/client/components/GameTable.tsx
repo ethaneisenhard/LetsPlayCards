@@ -125,7 +125,7 @@ export function GameTable({
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
   const [askRank, setAskRank] = useState<string | null>(null);
   const [askWho, setAskWho] = useState<string>(ANYONE_TARGET_ID);
-  const { setActiveGameType, setNavTools } = useChrome();
+  const { setActiveGameType, setNavTools, setNavEnd } = useChrome();
   const theme = useMemo(
     () => resolveSurface(game.gameType, config.tableTheme),
     [game.gameType, config.tableTheme, themeTick],
@@ -188,23 +188,30 @@ export function GameTable({
             {copied ? 'Copied' : 'Invite'}
           </button>
         )}
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            onClick={() => setRulesOpen((v) => !v)}
-            aria-expanded={rulesOpen}
-            className={`min-h-11 px-2 text-sm font-semibold ${
-              rulesOpen ? 'text-gold' : 'text-[color:var(--text)]/80 hover:text-gold'
-            }`}
-          >
-            Rules
-          </button>
-          {rulesOpen && <RulesOverlay card={rules} onClose={() => setRulesOpen(false)} />}
-        </div>
       </div>,
     );
     return () => setNavTools(null);
-  }, [appNav, config.name, copied, game.code, rules, rulesOpen, setNavTools, showInvite]);
+  }, [appNav, config.name, copied, game.code, setNavTools, showInvite]);
+
+  useEffect(() => {
+    if (!appNav) return;
+    setNavEnd(
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          onClick={() => setRulesOpen((v) => !v)}
+          aria-expanded={rulesOpen}
+          className={`min-h-11 px-2 text-sm font-semibold ${
+            rulesOpen ? 'text-gold' : 'text-[color:var(--text)]/80 hover:text-gold'
+          }`}
+        >
+          Rules
+        </button>
+        {rulesOpen && <RulesOverlay card={rules} onClose={() => setRulesOpen(false)} />}
+      </div>,
+    );
+    return () => setNavEnd(null);
+  }, [appNav, rules, rulesOpen, setNavEnd]);
 
   const skipDealRef = useRef<() => void>(() => {});
   function trySend(action: { intent: string; [k: string]: unknown }) {

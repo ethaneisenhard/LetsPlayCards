@@ -9,6 +9,9 @@ type ChromeApi = {
   setActiveGameType: (gameType?: string) => void;
   navTools: ReactNode;
   setNavTools: (node: ReactNode) => void;
+  /** Trailing header slot — sits immediately left of the profile control. */
+  navEnd: ReactNode;
+  setNavEnd: (node: ReactNode) => void;
 };
 
 const ChromeContext = createContext<ChromeApi | null>(null);
@@ -24,6 +27,7 @@ export function ChromeProvider({ children }: { children: ReactNode }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeGameType, setActiveGameType] = useState<string | undefined>();
   const [navTools, setNavTools] = useState<ReactNode>(null);
+  const [navEnd, setNavEnd] = useState<ReactNode>(null);
 
   const api = useMemo<ChromeApi>(
     () => ({
@@ -33,8 +37,10 @@ export function ChromeProvider({ children }: { children: ReactNode }) {
       setActiveGameType,
       navTools,
       setNavTools,
+      navEnd,
+      setNavEnd,
     }),
-    [activeGameType, navTools],
+    [activeGameType, navTools, navEnd],
   );
 
   return (

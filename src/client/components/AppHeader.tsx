@@ -6,7 +6,7 @@ import { ProfileAvatar } from './ProfileAvatar';
 import { ProfileMenu } from './ProfileMenu';
 
 export function AppHeader() {
-  const { navTools } = useChrome();
+  const { navTools, navEnd } = useChrome();
   const [name, setName] = useState(() => loadDisplayName());
   const [avatar, setAvatar] = useState(() => loadAvatarEmoji());
   const [menuOpen, setMenuOpen] = useState(false);
@@ -37,7 +37,8 @@ export function AppHeader() {
 
         {navTools && <div className="flex-1 min-w-0 flex items-center">{navTools}</div>}
 
-        <div className="relative shrink-0 ml-auto">
+        <div className="relative shrink-0 ml-auto flex items-center gap-1">
+          {navEnd}
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Profile"
