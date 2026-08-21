@@ -69,15 +69,33 @@ export const speedGame: CardGame = {
     const gs = game.gameState as SpeedState;
 
     if (action.intent === 'draw-center') {
-      if (gs.stock.length < 2) throw new EngineError('Not enough stock to draw');
-      const [a, b, ...rest] = gs.stock;
+      let stock = [...gs.stock];
+      let center: [Card[], Card[]] = [gs.center[0], gs.center[1]];
+      if (stock.length < 2) {
+        const extras = [...center[0].slice(0, -1), ...center[1].slice(0, -1)];
+        if (extras.length + stock.length < 2) {
+          const remaining = (id: string) =>
+            (players.find((p) => p.id === id)?.hand.length ?? 0) + (gs.stacks[id]?.length ?? 0);
+          const winner = [...players].sort((a, b) => remaining(a.id) - remaining(b.id))[0];
+          return {
+            game: { ...game, status: 'finished', gameState: { ...gs, winner: winner.id } },
+            players,
+          };
+        }
+        stock = shuffleDeck([...stock, ...extras]);
+        center = [
+          [center[0][center[0].length - 1]],
+          [center[1][center[1].length - 1]],
+        ];
+      }
+      const [a, b, ...rest] = stock;
       return {
         game: {
           ...game,
           gameState: {
             ...gs,
             stock: rest,
-            center: [[...gs.center[0], a], [...gs.center[1], b]],
+            center: [[...center[0], a], [...center[1], b]],
           } satisfies SpeedState,
         },
         players,

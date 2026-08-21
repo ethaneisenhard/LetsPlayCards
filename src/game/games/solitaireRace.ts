@@ -65,6 +65,7 @@ export const solitaireRaceGame: CardGame = {
   view(state, viewerId) {
     const pv = publicView(state, viewerId);
     const cur = gs(state);
+    if (!cur?.boards) return pv;
     const masked: Record<string, unknown> = {};
     for (const [pid, board] of Object.entries(cur.boards)) {
       if (pid === viewerId) {

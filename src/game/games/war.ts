@@ -16,7 +16,20 @@ export function warFlip(state: EngineState, playerId: string): EngineState {
 
   const player = findPlayer(players, playerId);
   if (!player) throw new EngineError('Player not found');
-  if (player.hand.length === 0) throw new EngineError('No cards in hand');
+  if (player.hand.length === 0) {
+    const opponent = players.find((p) => p.id !== playerId);
+    if (opponent) {
+      return {
+        game: {
+          ...game,
+          status: 'finished',
+          gameState: { ...gs, phase: 'finished', winner: opponent.id, roundWinnerId: opponent.id },
+        },
+        players,
+      };
+    }
+    throw new EngineError('No cards in hand');
+  }
 
   const n = gs.phase === 'war' ? Math.min(4, player.hand.length) : 1;
   const played = player.hand.slice(0, n);

@@ -27,7 +27,8 @@ export const ohHellGame: CardGame = {
   family: 'trick',
   deck: {},
   setup(state) {
-    return { ...startRound(state, 1, 1), game: { ...state.game, status: 'playing' } };
+    const next = startRound(state, 1, 1);
+    return { ...next, game: { ...next.game, status: 'playing' } };
   },
   reduce(state, action) {
     const { game, players } = state;

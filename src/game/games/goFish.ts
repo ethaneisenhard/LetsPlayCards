@@ -93,6 +93,50 @@ export function goFishAsk(
   };
 }
 
+function booksWinner(books: Record<string, Card[][]>): string | null {
+  let winner: string | null = null;
+  let maxBooks = -1;
+  for (const [pid, bks] of Object.entries(books)) {
+    if (bks.length > maxBooks) {
+      maxBooks = bks.length;
+      winner = pid;
+    }
+  }
+  return winner;
+}
+
+/** Empty hand on your turn: draw one, or skip (and finish if the table is empty). */
+function drawOrSkipEmptyHand(state: EngineState, playerId: string): EngineState {
+  const player = findPlayer(state.players, playerId);
+  if (!player || player.hand.length > 0) return state;
+  const gs = state.game.gameState as GoFishGameState;
+  if (state.game.deck.length > 0) {
+    const card = state.game.deck[0];
+    return {
+      game: { ...state.game, deck: state.game.deck.slice(1) },
+      players: state.players.map((p) => (p.id === playerId ? { ...p, hand: [card] } : p)),
+    };
+  }
+  if (state.players.every((p) => p.hand.length === 0)) {
+    const winner = booksWinner(gs.books ?? {});
+    return {
+      game: {
+        ...state.game,
+        status: 'finished',
+        gameState: { ...gs, winner },
+      },
+      players: state.players,
+    };
+  }
+  return {
+    game: {
+      ...state.game,
+      currentSeat: nextSeat(orderedSeats(state.players), player.seat),
+    },
+    players: state.players,
+  };
+}
+
 export const goFishGame: CardGame = {
   type: 'go_fish',
   config: GAME_CONFIGS.go_fish,
@@ -128,7 +172,10 @@ export const goFishGame: CardGame = {
   },
   reduce(state, action) {
     if (action.intent === 'gofish-ask') {
-      return goFishAsk(state, action.playerId!, String(action.rank), String(action.targetId));
+      const ready = drawOrSkipEmptyHand(state, action.playerId!);
+      const player = findPlayer(ready.players, action.playerId!);
+      if (!player || player.hand.length === 0) return ready;
+      return goFishAsk(ready, action.playerId!, String(action.rank), String(action.targetId));
     }
     throw new EngineError(`Unknown intent: ${action.intent}`);
   },

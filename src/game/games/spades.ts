@@ -118,18 +118,25 @@ export const spadesGame: CardGame = {
         }
         const winnerTeam = teamScore[0] >= TARGET && teamScore[0] > teamScore[1] ? 0 : teamScore[1] >= TARGET && teamScore[1] > teamScore[0] ? 1 : -1;
         const finished = winnerTeam >= 0;
+        let nextHands = nextPlayers;
+        if (!finished) {
+          const deck = shuffleDeck(createDeck());
+          const deal = Math.floor(deck.length / players.length);
+          nextHands = players.map((p, i) => ({ ...p, hand: deck.slice(i * deal, (i + 1) * deal) }));
+        }
         return {
           game: {
             ...game,
             status: finished ? 'finished' : 'playing',
             currentSeat: finished ? winnerSeat : nextSeat(seats, winnerSeat),
             gameState: {
-              ...gs, currentTrick: [], leadSuit: null, tricksWon, spadesBroken, handsPlayed: finished ? handsPlayed : 0,
+              ...gs, currentTrick: [], leadSuit: null, tricksWon: finished ? tricksWon : Object.fromEntries(players.map((p) => [p.id, 0])),
+              spadesBroken: finished ? spadesBroken : false, handsPlayed: finished ? handsPlayed : 0,
               teamScore, teamBags, phase: finished ? 'finished' : 'bidding', bids: finished ? gs.bids : {},
               winner: finished ? String(winnerTeam) : null,
             },
           },
-          players: nextPlayers,
+          players: nextHands,
         };
       }
 
