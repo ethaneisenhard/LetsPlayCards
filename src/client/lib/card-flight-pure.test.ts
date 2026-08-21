@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { flightDelta, laneFlights, originAnchor, laneAnchor } from './card-flight-pure';
+import {
+  DEAL_STAGGER_MS,
+  STOCK_ANCHOR,
+  dealFlights,
+  flightDelta,
+  laneFlights,
+  originAnchor,
+  laneAnchor,
+  shouldAnimateDeal,
+} from './card-flight-pure';
 
 const ace = { id: 'AS', suit: 'spades' as const, rank: 'A' as const };
 const king = { id: 'KH', suit: 'hearts' as const, rank: 'K' as const };
@@ -39,6 +48,39 @@ describe('laneFlights', () => {
         kind: 'collect',
       },
     ]);
+  });
+});
+
+describe('dealFlights', () => {
+  it('deals round-robin from the pile to each seat', () => {
+    const you = { id: 'AH', suit: 'hearts' as const, rank: 'A' as const };
+    const flights = dealFlights([
+      { playerId: 'me', count: 2, cards: [you, king] },
+      { playerId: 'bill', count: 2 },
+    ]);
+    expect(flights).toHaveLength(4);
+    expect(flights.map((f) => f.toAnchor)).toEqual([
+      originAnchor('me'),
+      originAnchor('bill'),
+      originAnchor('me'),
+      originAnchor('bill'),
+    ]);
+    expect(flights[0]).toMatchObject({
+      kind: 'deal',
+      fromAnchor: STOCK_ANCHOR,
+      faceDown: false,
+      card: you,
+      delayMs: 0,
+    });
+    expect(flights[1].faceDown).toBe(true);
+    expect(flights[3].delayMs).toBe(3 * DEAL_STAGGER_MS);
+  });
+
+  it('skips tableau and empty seats', () => {
+    expect(shouldAnimateDeal({ showTableau: true, seatCounts: [7, 7] })).toBe(false);
+    expect(shouldAnimateDeal({ seatCounts: [0, 0] })).toBe(false);
+    expect(shouldAnimateDeal({ seatCounts: [7, 7] })).toBe(true);
+    expect(dealFlights([{ playerId: 'me', count: 0 }])).toEqual([]);
   });
 });
 

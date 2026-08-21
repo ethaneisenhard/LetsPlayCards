@@ -13,6 +13,8 @@ import { resolveTableKind } from './playability-registry-pure';
 import { GLOSSARY } from '../../content/glossary';
 import { askTurnHint, seatActionLabel } from '../../client/lib/ask-action-pure';
 import { lastAskLine, setCountLabel, setScoreHeading } from '../../client/lib/last-ask-pure';
+import { disabledActionReason, resolveTurnStrip, youSeatLine } from '../../client/lib/table-turn-pure';
+import { handReadout } from '../../client/lib/hand-readout-pure';
 import { undefinedJargon } from './plain-copy-pure';
 
 export type RulesFail = { id: string; detail: string };
@@ -340,6 +342,12 @@ export function auditGameRules(type: GameType): RulesAudit {
     winning,
     chromeLabels,
     askTurnHint(null),
+    resolveTurnStrip({ isMyTurn: true, askRank: true }).line,
+    resolveTurnStrip({ isMyTurn: false, actorName: 'Alice' }).line,
+    resolveTurnStrip({ canDraw: true, canDrawDiscard: true, isMyTurn: true }).line,
+    disabledActionReason({ intent: 'knock', isMyTurn: true, busy: false, legal: false }) ?? '',
+    youSeatLine('Alex', true),
+    handReadout([{ id: 'AH', suit: 'hearts', rank: 'A' }]),
     seatActionLabel({ askRank: true, drawFrom: false, rank: null, name: 'Alice', handCount: 4 }),
     setCountLabel(1),
     setScoreHeading(),

@@ -5,6 +5,8 @@ export type FeltActions = {
   allowDiscard: boolean;
   allowDraw: boolean;
   allowPickup: boolean;
+  /** Leftover pile is a legal take (`draw` + source: discard). */
+  allowDrawDiscard: boolean;
 };
 
 const NONE: FeltActions = {
@@ -12,11 +14,13 @@ const NONE: FeltActions = {
   allowDiscard: false,
   allowDraw: false,
   allowPickup: false,
+  allowDrawDiscard: false,
 };
 
 const OPEN_FELT_DRAW = new Set(['freeplay', 'crazy_eights']);
 const OPEN_FELT_DISCARD = new Set(['freeplay']);
 const OPEN_FELT_PICKUP = new Set(['freeplay']);
+const DRAW_LEFTOVER = new Set(['gin_rummy', 'rummy', 'rummy_500']);
 
 /** Which generic felt buttons this table kind may show. Probe still gates each click. */
 export function resolveFeltActions(input: {
@@ -42,13 +46,20 @@ export function resolveFeltActions(input: {
     return NONE;
   }
   if (input.tableKind === 'peg-board' || input.tableKind === 'suit-ladders') {
-    return { allowPlay: true, allowDiscard: false, allowDraw: false, allowPickup: false };
+    return { allowPlay: true, allowDiscard: false, allowDraw: false, allowPickup: false, allowDrawDiscard: false };
   }
   if (input.tableKind === 'trick') {
-    return { allowPlay: true, allowDiscard: false, allowDraw: false, allowPickup: false };
+    return { allowPlay: true, allowDiscard: false, allowDraw: false, allowPickup: false, allowDrawDiscard: false };
   }
   if (input.family === 'meld') {
-    return { allowPlay: false, allowDiscard: true, allowDraw: true, allowPickup: false };
+    const type = input.gameType ?? '';
+    return {
+      allowPlay: false,
+      allowDiscard: true,
+      allowDraw: true,
+      allowPickup: false,
+      allowDrawDiscard: DRAW_LEFTOVER.has(type),
+    };
   }
   const type = input.gameType ?? '';
   return {
@@ -56,6 +67,7 @@ export function resolveFeltActions(input: {
     allowDiscard: OPEN_FELT_DISCARD.has(type),
     allowDraw: OPEN_FELT_DRAW.has(type),
     allowPickup: OPEN_FELT_PICKUP.has(type),
+    allowDrawDiscard: false,
   };
 }
 

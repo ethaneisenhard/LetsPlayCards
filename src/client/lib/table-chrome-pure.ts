@@ -88,6 +88,7 @@ export const TURN_BUTTONS: Record<string, TurnButton[]> = {
     { intent: 'draw', label: 'Draw' },
   ],
   thirty_one: [{ intent: 'knock', label: 'Stop here' }],
+  gin_rummy: [{ intent: 'knock', label: 'Stop here' }],
   texas_holdem: [
     { intent: 'check', label: 'No bet' },
     { intent: 'call', label: 'Match bet' },
@@ -160,6 +161,7 @@ export function resolveTableChrome(input: {
   const showFishing = FISHING_TYPES.has(input.gameType);
   const showPeg = PEG_TYPES.has(input.gameType);
   const cribDiscard = CRIB_DISCARD.has(input.gameType);
+  const meld = input.family === 'meld';
   return {
     handReveal,
     stockIntent: STOCK_INTENT[input.gameType] ?? DEFAULT_CHROME.stockIntent,
@@ -177,7 +179,7 @@ export function resolveTableChrome(input: {
       !showCorners &&
       !showFishing &&
       !showPeg &&
-      turnButtons.length === 0,
+      (turnButtons.length === 0 || meld),
     reserveBattleLane: handReveal === 'stock' || trick,
     actWhen: ACT_WHEN[input.gameType] ?? DEFAULT_CHROME.actWhen,
     drawPicked: DRAW_PICKED.has(input.gameType),

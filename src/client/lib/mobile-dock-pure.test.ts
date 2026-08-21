@@ -37,13 +37,15 @@ describe('resolveMobileDock', () => {
 });
 
 describe('mobileTurnLine', () => {
-  it('does not repeat the Ask tutorial in the banner', () => {
-    expect(mobileTurnLine({ busy: false, isMyTurn: true })).toBe('● Your turn');
+  it('puts the next legal move on the banner', () => {
+    expect(mobileTurnLine({ busy: false, isMyTurn: true, askRank: true })).toBe(
+      'Your turn — pick a number you already have, then ask',
+    );
     expect(mobileTurnLine({ busy: true, busyHint: 'Alice is playing…', isMyTurn: false })).toBe(
       'Alice is playing…',
     );
     expect(mobileTurnLine({ busy: false, isMyTurn: false, waitingName: 'Alice' })).toBe(
-      'Waiting for Alice…',
+      'Alice is taking a turn',
     );
   });
 });

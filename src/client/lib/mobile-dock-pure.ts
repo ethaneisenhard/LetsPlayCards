@@ -37,8 +37,19 @@ export function mobileTurnLine(input: {
   busyHint?: string;
   isMyTurn: boolean;
   waitingName?: string | null;
+  askRank?: boolean;
+  pickedRank?: string | null;
+  drawFrom?: boolean;
 }): string {
   if (input.busy) return input.busyHint ?? 'Opponent is playing…';
-  if (input.isMyTurn) return '● Your turn';
-  return `Waiting for ${input.waitingName ?? '…'}…`;
+  if (!input.isMyTurn) {
+    return input.waitingName ? `${input.waitingName} is taking a turn` : 'Waiting for the next player';
+  }
+  if (input.askRank) {
+    return input.pickedRank
+      ? `Your turn — ask someone for ${input.pickedRank}s`
+      : 'Your turn — pick a number you already have, then ask';
+  }
+  if (input.drawFrom) return 'Your turn — take a card from another player';
+  return 'Your turn';
 }

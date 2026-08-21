@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PlayingCard } from './PlayingCard';
 import {
-  FLIGHT_MS,
   flightDelta,
+  flightDurationMs,
   type Box,
   type CardFlightPlan,
 } from '../lib/card-flight-pure';
@@ -33,6 +33,8 @@ function FlyingCard({
     let cancelled = false;
     let attempts = 0;
     let doneTimer: ReturnType<typeof setTimeout> | undefined;
+    let startTimer: ReturnType<typeof setTimeout> | undefined;
+    const duration = flightDurationMs(plan.kind);
     const tryRead = () => {
       if (cancelled) return;
       const from = readBox(plan.fromAnchor);
@@ -44,7 +46,7 @@ function FlyingCard({
             if (!cancelled) setGo(true);
           });
         });
-        doneTimer = setTimeout(() => onDone(plan.key), FLIGHT_MS + 40);
+        doneTimer = setTimeout(() => onDone(plan.key), duration + 40);
         return;
       }
       attempts += 1;
@@ -54,17 +56,19 @@ function FlyingCard({
       }
       requestAnimationFrame(tryRead);
     };
-    tryRead();
+    startTimer = setTimeout(tryRead, plan.delayMs ?? 0);
     return () => {
       cancelled = true;
       if (doneTimer) clearTimeout(doneTimer);
+      if (startTimer) clearTimeout(startTimer);
     };
-  }, [plan.key, plan.fromAnchor, plan.toAnchor, onDone]);
+  }, [plan.key, plan.fromAnchor, plan.toAnchor, plan.delayMs, plan.kind, onDone]);
 
   if (!boxes) return null;
   const { from, to } = boxes;
   const delta = flightDelta(from, to);
-  const takeoff = plan.kind === 'play' ? (to.y < from.y ? -14 : 12) : 6;
+  const takeoff = plan.kind === 'play' ? (to.y < from.y ? -14 : 12) : plan.kind === 'deal' ? -18 : 6;
+  const duration = flightDurationMs(plan.kind);
 
   return (
     <div
@@ -79,12 +83,12 @@ function FlyingCard({
         transform: go
           ? `translate(${delta.dx}px, ${delta.dy}px) scale(${delta.scaleX}, ${delta.scaleY}) rotate(0deg)`
           : `translate(0, 0) scale(1) rotate(${takeoff}deg)`,
-        transition: `transform ${FLIGHT_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+        transition: `transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
         transformOrigin: 'top left',
       }}
     >
       <div className="w-full h-full [&>button]:w-full [&>button]:h-full">
-        <PlayingCard card={plan.card} small={from.w < 50} />
+        <PlayingCard card={plan.card} faceDown={plan.faceDown} small={from.w < 50} quiet />
       </div>
     </div>
   );

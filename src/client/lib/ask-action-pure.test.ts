@@ -57,8 +57,8 @@ describe('ask copy', () => {
     expect(askButtonLabel(null, 'Alice', true)).toBe('Ask');
     expect(askButtonLabel('7', 'Alice', true)).toBe('Ask anyone for 7s');
     expect(askButtonLabel('7', 'Alice', false)).toBe('Ask Alice for 7s');
-    expect(askTurnHint(null)).toBe('● Your turn · ask for a number or face you already have');
-    expect(askTurnHint('Q')).toBe('● Your turn · ask for Qs');
+    expect(askTurnHint(null)).toBe('Your turn — pick a number you already have, then ask');
+    expect(askTurnHint('Q')).toBe('Your turn — ask someone for Qs');
   });
 
   it('builds the engine intent without a new kind', () => {
@@ -74,7 +74,7 @@ describe('draw-from copy', () => {
   it('makes the draw target obvious', () => {
     expect(drawButtonLabel(null)).toBe('Pick who to draw from');
     expect(drawButtonLabel('Alice')).toBe('Draw from Alice');
-    expect(drawTurnHint()).toBe('● Your turn · draw a card from another player');
+    expect(drawTurnHint()).toBe('Your turn — take a card from another player');
     expect(drawFromAction('fake-1')).toEqual({ intent: 'draw-from', targetId: 'fake-1' });
   });
 

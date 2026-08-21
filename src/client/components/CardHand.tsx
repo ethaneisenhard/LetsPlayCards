@@ -8,6 +8,8 @@ import {
   sortHandBySuit,
   syncHandOrder,
 } from '../lib/hand-order-pure';
+import { handCountLine, handReadout } from '../lib/hand-readout-pure';
+import { youSeatLine } from '../lib/table-turn-pure';
 
 interface CardHandProps {
   cards: Card[];
@@ -56,8 +58,8 @@ export function CardHand({
   onPick,
   pickedCardId,
   pickedCardIds,
-  pickHint,
-  playerName: _playerName,
+  pickHint: _pickHint,
+  playerName,
   isMyTurn = true,
   mobile = false,
   quiet = false,
@@ -198,17 +200,21 @@ export function CardHand({
 
   if (mobile) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
         <div className="flex items-center justify-between px-3 pt-2 pb-1">
-          <span className="text-white/30 text-[10px] uppercase tracking-widest">
-            Your cards · {ordered.length}
+          <span className="text-white text-sm font-semibold">
+            {youSeatLine(playerName, isMyTurn)}
           </span>
           {selectedCard && (
-            <button onClick={() => setSelectedCard(null)} className="text-white/30 text-[10px]">
+            <button onClick={() => setSelectedCard(null)} className="min-h-11 px-3 text-white/80 text-sm">
               ✕ Cancel
             </button>
           )}
         </div>
+        <p className="px-3 pb-1 text-white/85 text-xs leading-snug" aria-live="polite">
+          {handCountLine(ordered.length)}
+          {ordered.length > 0 ? `: ${handReadout(ordered)}` : ''}
+        </p>
 
         {fan}
         {orderBar}
@@ -233,23 +239,20 @@ export function CardHand({
             )}
           </div>
         )}
-        {!quiet && !selectedCard && !pickedCardId && ordered.length > 0 && (
-          <p className="text-white/20 text-[10px] text-center pb-3">
-            {pickHint ?? arrangeHint}
-          </p>
-        )}
-        {!quiet && onPick && pickedCardId && pickHint && (
-          <p className="text-gold/50 text-[10px] text-center pb-3">{pickHint}</p>
+        {!quiet && !selectedCard && !pickedCardId && ordered.length > 1 && (
+          <p className="text-white/60 text-xs text-center pb-3">{arrangeHint}</p>
         )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="text-gold/60 text-xs tracking-widest uppercase font-medium">
-        Your cards · {ordered.length} card{ordered.length !== 1 ? 's' : ''}
-      </div>
+    <div className="flex flex-col items-center gap-3" role="region" aria-label={youSeatLine(playerName, isMyTurn)}>
+      <div className="text-white text-sm font-semibold">{youSeatLine(playerName, isMyTurn)}</div>
+      <p className="text-white/85 text-sm text-center max-w-xl leading-snug px-4" aria-live="polite">
+        {handCountLine(ordered.length)}
+        {ordered.length > 0 ? `: ${handReadout(ordered)}` : ''}
+      </p>
 
       {fan}
       {orderBar}
@@ -280,11 +283,8 @@ export function CardHand({
           </button>
         </div>
       )}
-      {!selectedCard && !pickedCardId && ordered.length > 0 && (
-        <p className="text-white/30 text-xs">{pickHint ?? arrangeHint}</p>
-      )}
-      {onPick && pickedCardId && pickHint && (
-        <p className="text-gold/60 text-xs">{pickHint}</p>
+      {!selectedCard && !pickedCardId && ordered.length > 1 && (
+        <p className="text-white/60 text-xs">{arrangeHint}</p>
       )}
     </div>
   );

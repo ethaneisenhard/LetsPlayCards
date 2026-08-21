@@ -2,12 +2,16 @@ import type { Card } from '../../game/types';
 
 export type LaneSnapshot = Record<string, Card[]>;
 
+export type FlightKind = 'play' | 'collect' | 'deal';
+
 export type CardFlightPlan = {
   key: string;
   card: Card;
   fromAnchor: string;
   toAnchor: string;
-  kind: 'play' | 'collect';
+  kind: FlightKind;
+  faceDown?: boolean;
+  delayMs?: number;
 };
 
 export function originAnchor(playerId: string): string {
@@ -19,6 +23,68 @@ export function laneAnchor(playerId: string): string {
 }
 
 export const POT_ANCHOR = 'pot';
+export const STOCK_ANCHOR = 'stock';
+
+export const DEAL_STAGGER_MS = 75;
+export const DEAL_FLIGHT_MS = 380;
+export const DEAL_MAX_CARDS = 20;
+export const DEAL_SKIP_AFTER_MS = 4000;
+
+const DEAL_BACK: Card = { id: 'deal-back', suit: 'spades', rank: 'A' };
+
+export type DealSeat = {
+  playerId: string;
+  count: number;
+  /** Face-up cards (viewer hand). Missing = face-down dummies. */
+  cards?: Card[];
+};
+
+export function shouldAnimateDeal(input: {
+  showTableau?: boolean;
+  showMemory?: boolean;
+  seatCounts: number[];
+}): boolean {
+  if (input.showTableau || input.showMemory) return false;
+  return input.seatCounts.some((n) => n > 0);
+}
+
+/** Round-robin flights from the leftover / face-down pile to each seat. */
+export function dealFlights(seats: DealSeat[]): CardFlightPlan[] {
+  const remaining = seats.map((s) => Math.max(0, s.count));
+  const total = remaining.reduce((a, b) => a + b, 0);
+  if (total === 0) return [];
+  const cap = Math.min(total, DEAL_MAX_CARDS);
+  const out: CardFlightPlan[] = [];
+  const given = seats.map(() => 0);
+  let dealt = 0;
+  while (dealt < cap) {
+    let progressed = false;
+    for (let i = 0; i < seats.length && dealt < cap; i++) {
+      if (given[i] >= remaining[i]) continue;
+      const seat = seats[i];
+      const n = given[i];
+      const card = seat.cards?.[n];
+      out.push({
+        key: `deal:${seat.playerId}:${n}`,
+        card: card ?? { ...DEAL_BACK, id: `deal-back-${seat.playerId}-${n}` },
+        fromAnchor: STOCK_ANCHOR,
+        toAnchor: originAnchor(seat.playerId),
+        kind: 'deal',
+        faceDown: !card,
+        delayMs: dealt * DEAL_STAGGER_MS,
+      });
+      given[i] += 1;
+      dealt += 1;
+      progressed = true;
+    }
+    if (!progressed) break;
+  }
+  return out;
+}
+
+export function flightDurationMs(kind: FlightKind): number {
+  return kind === 'deal' ? DEAL_FLIGHT_MS : FLIGHT_MS;
+}
 
 export function playerIdFromAnchor(anchor: string): string {
   const i = anchor.indexOf(':');

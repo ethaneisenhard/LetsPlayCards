@@ -46,8 +46,8 @@ export function askButtonLabel(
 
 export function askTurnHint(rank: string | null): string {
   return rank
-    ? `● Your turn · ask for ${rank}s`
-    : '● Your turn · ask for a number or face you already have';
+    ? `Your turn — ask someone for ${rank}s`
+    : 'Your turn — pick a number you already have, then ask';
 }
 
 export function goFishAskAction(
@@ -66,7 +66,7 @@ export function drawButtonLabel(targetName: string | null): string {
 }
 
 export function drawTurnHint(): string {
-  return '● Your turn · draw a card from another player';
+  return 'Your turn — take a card from another player';
 }
 
 export function seatActionLabel(input: {
