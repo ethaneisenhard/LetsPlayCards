@@ -154,6 +154,15 @@ export function Home() {
         <p className="text-white/20 text-xs text-center mt-12">
           No account needed · Works on any device
         </p>
+        <p className="text-white/25 text-xs text-center mt-3">
+          <a href="/history/" className="hover:text-gold/80 transition-colors">
+            History of playing cards
+          </a>
+          <span className="mx-2">·</span>
+          <a href="/games/" className="hover:text-gold/80 transition-colors">
+            Game rules
+          </a>
+        </p>
         {showDevLink && (
           <a
             href="/playground"
