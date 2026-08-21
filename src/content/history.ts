@@ -193,7 +193,7 @@ export interface HistoryFigure {
 }
 
 /** Bump when visuals move so cached preview HTML/images refresh. */
-export const HISTORY_ASSET_VERSION = 'tiles1';
+export const HISTORY_ASSET_VERSION = 'play1';
 
 export const HISTORY_HERO = {
   src: '/history/img/italian-15c.webp',
