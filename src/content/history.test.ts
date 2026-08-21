@@ -68,6 +68,7 @@ describe('renderHistoryPage', () => {
     expect(html).toContain('href="/solo/go_fish"');
     expect(html).toContain('href="/games/war/"');
     expect(html).toContain('href="/games/go_fish/"');
+    expect(html).toContain('class="tile-main" href="/solo/war"');
     expect(html).toContain('class="tile-play" href="/solo/war"');
     expect(html).not.toMatch(/class="play"><a href="\/"/);
     expect(html).toContain('width=device-width');
@@ -122,7 +123,7 @@ describe('renderHistoryPage', () => {
   });
 
   it('shows real historic cards in the marks section, not a drawing', () => {
-    expect(HISTORY_ASSET_VERSION).toBe('tiles1');
+    expect(HISTORY_ASSET_VERSION).toBe('play1');
     expect(html).toMatch(/\.game-tile \.n\{display:block/);
     expect(html).toMatch(/\.game-tile \.d\{display:block/);
     expect(html).toContain('class="game-tiles"');

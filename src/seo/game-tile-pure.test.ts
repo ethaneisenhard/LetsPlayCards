@@ -47,6 +47,7 @@ describe('renderGameTile', () => {
     expect(html).toContain(war.config.tagline);
     expect(html).toContain('2 players');
     expect(html).toContain('background-image:linear-gradient(to bottom right');
+    expect(html).toContain('class="tile-main" href="/solo/war"');
     expect(html).toContain('class="tile-play" href="/solo/war"');
     expect(html).toContain('class="tile-rules" href="/games/war/"');
     expect(html).not.toContain('href="/"');
