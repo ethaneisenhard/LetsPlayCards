@@ -4,6 +4,9 @@ import { EngineError, findPlayer, updatePlayerHand, type EngineState } from '../
 import type { CardGame } from '../registry/types';
 import { GAME_CONFIGS } from '../registry/catalog';
 
+/** Lane hold before collect — enough for a read + winner shake. */
+export const WAR_REVEAL_HOLD_MS = 1400;
+
 export function warFlip(state: EngineState, playerId: string): EngineState {
   const { game, players } = state;
   const gs = game.gameState as WarGameState;

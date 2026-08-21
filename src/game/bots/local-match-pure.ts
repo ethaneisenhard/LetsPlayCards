@@ -2,6 +2,7 @@ import { addPlayer, createLobbyState, startGame, type EngineState } from '../eng
 import { GAME_CONFIGS } from '../registry/catalog';
 import { DEFAULT_FREEPLAY_RULES, type GameSettings } from '../types';
 import type { GameType } from '../gameTypes';
+import { WAR_REVEAL_HOLD_MS } from '../games/war';
 
 export const LOCAL_HUMAN_ID = 'fake-0';
 export const LOCAL_BOT_NAMES = ['You', 'Alice', 'Bob', 'Carol', 'Dave', 'Erin', 'Frank', 'Grace', 'Henry', 'Ivy'];
@@ -27,6 +28,6 @@ export function createLocalMatch(
 }
 
 export function stepDelayMs(action: { intent: string }): number {
-  if (action.intent === 'war-collect') return 1400;
+  if (action.intent === 'war-collect') return WAR_REVEAL_HOLD_MS;
   return 850;
 }
